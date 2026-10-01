@@ -11,14 +11,15 @@
   const topBar = document.getElementById('top-bar');
 
   function updateNav() {
-    const topBarH = topBar ? topBar.offsetHeight : 0;
-    const scrolled = window.scrollY > 60;
+    const isTopBarVisible = topBar && getComputedStyle(topBar).display !== 'none';
+    const topBarH = isTopBarVisible ? topBar.offsetHeight : 0;
+    const scrolled = window.scrollY > 40;
     if (scrolled) {
       nav.classList.add('scrolled');
-      if (topBar) nav.style.top = '0';
+      nav.style.top = '0';
     } else {
       nav.classList.remove('scrolled');
-      if (topBar) nav.style.top = topBarH + 'px';
+      nav.style.top = topBarH ? topBarH + 'px' : '0';
     }
   }
   window.addEventListener('scroll', updateNav, { passive: true });
@@ -138,7 +139,7 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.04, rootMargin: '0px 0px 60px 0px' });
 
     revealEls.forEach(el => observer.observe(el));
   }
@@ -333,6 +334,7 @@
           const category = detail.getAttribute('data-category');
           if (filter === 'all' || category === filter) {
             detail.style.display = 'block';
+            detail.querySelectorAll('.reveal').forEach(r => r.classList.add('visible'));
             setTimeout(() => {
               detail.style.opacity = '1';
               detail.style.transform = 'translateY(0)';
