@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Services — Vintage Finvest | Portfolio, Tax, Estate & Wealth Management</title>
+  <meta name="description" content="Vintage Finvest offers portfolio analysis, investment planning, personal tax planning, estate planning, multi-generational wealth management, treasury management, and philanthropic planning.">
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .service-detail { padding: var(--space-20) 0; border-bottom: 1px solid var(--navy-border); }
+    .service-detail:last-child { border-bottom: none; }
+    .service-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-16); align-items: center; }
+    .service-detail-grid.reverse { }
+    .service-detail-grid.reverse .service-detail-media { order: 2; }
+    .service-detail-grid.reverse .service-detail-content { order: 1; }
+    .service-detail-media { position: relative; border-radius: var(--radius-lg); overflow: hidden; height: 420px; }
+    .service-detail-bg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    .service-detail-bg svg { width: 160px; height: 160px; opacity: 0.12; color: var(--gold-champagne); }
+    .service-detail-media-overlay { position: absolute; inset: 0; border: 1px solid var(--gold-border); border-radius: var(--radius-lg); pointer-events: none; }
+    .service-num {
+      position: absolute; top: var(--space-6); left: var(--space-6);
+      font-family: var(--font-serif); font-size: 4rem; font-weight: 300;
+      color: rgba(200,169,110,0.15); line-height: 1;
+    }
+    .service-detail-title { font-family: var(--font-serif); font-size: clamp(var(--text-2xl), 3vw, var(--text-4xl)); font-weight: 500; color: var(--white); margin-bottom: var(--space-4); line-height: 1.2; }
+    .service-detail-title em { font-style: italic; color: var(--gold-champagne); }
+    .service-detail-body { font-size: var(--text-base); color: var(--slate-text); line-height: 1.85; margin-bottom: var(--space-4); }
+    .service-products { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-5); }
+    .service-product-tag {
+      font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.06em;
+      color: var(--gold-champagne); border: 1px solid var(--gold-border);
+      border-radius: var(--radius-full); padding: 5px 14px;
+      background: rgba(200,169,110,0.06);
+    }
+    @media (max-width: 900px) {
+      .service-detail-grid, .service-detail-grid.reverse { grid-template-columns: 1fr; }
+      .service-detail-grid.reverse .service-detail-media,
+      .service-detail-grid.reverse .service-detail-content { order: unset; }
+      .service-detail-media { height: 280px; }
+    }
+    /* Color per service */
+    .s1 { background: linear-gradient(135deg, #0d1a2a 0%, #152030 100%); }
+    .s2 { background: linear-gradient(135deg, #0d1a1a 0%, #152525 100%); }
+    .s3 { background: linear-gradient(135deg, #0d0d1a 0%, #151525 100%); }
+    .s4 { background: linear-gradient(135deg, #0d1a0d 0%, #152015 100%); }
+    .s5 { background: linear-gradient(135deg, #1a120d 0%, #201815 100%); }
+    .s6 { background: linear-gradient(135deg, #100d1a 0%, #181525 100%); }
+  </style>
+</head>
+<body>
+  <div class="top-bar" id="top-bar">
+    <div class="container">
+      <div class="top-bar-inner">
+        <div class="top-bar-links">
+          <a href="tel:+911126521217" class="top-bar-link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>+91-11-26521217</a>
+          <a href="mailto:services@vintagefinvest.com" class="top-bar-link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>services@vintagefinvest.com</a>
+          <a href="https://vintagefinvest.investwell.app/app/#/login" target="_blank" class="top-bar-link"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Investor Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <nav class="site-nav with-topbar" id="site-nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo"><img src="assets/images/logo.png" alt="Vintage Finvest" onerror="this.style.display='none'"><div class="nav-logo-text"><span class="nav-logo-name">Vintage Finvest</span><span class="nav-logo-sub">Services Pvt. Ltd.</span></div></a>
+      <div class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link active">Services</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="index.html#team" class="nav-link">Team</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </div>
+      <div class="nav-cta">
+        <a href="https://vintagefinvest.investwell.app/app/#/login" target="_blank" class="nav-portal-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Investor Portal</a>
+        <a href="contact.html" class="btn btn-primary btn-sm">Get Consultation</a>
+      </div>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+  <nav class="nav-drawer" id="nav-drawer" aria-hidden="true">
+    <a href="index.html" class="nav-drawer-link">Home</a>
+    <a href="services.html" class="nav-drawer-link">Services</a>
+    <a href="about.html" class="nav-drawer-link">About</a>
+    <a href="index.html#team" class="nav-drawer-link">Team</a>
+    <a href="contact.html" class="nav-drawer-link">Contact</a>
+    <div class="nav-drawer-footer">
+      <a href="https://vintagefinvest.investwell.app/app/#/login" target="_blank" class="btn btn-outline">Investor Portal</a>
+      <a href="contact.html" class="btn btn-primary">Book Consultation</a>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="container page-hero-content">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="index.html">Home</a><span class="breadcrumb-sep">›</span><span>Services</span></nav>
+      <div class="section-label reveal">What We Offer</div>
+      <h1 class="page-hero-title reveal reveal-delay-1">Our <em>Financial Services</em></h1>
+      <p class="page-hero-sub reveal reveal-delay-2">A comprehensive range of bespoke financial services — tailored precisely to your goals, risk tolerance, family situation, and legacy aspirations.</p>
+    </div>
+  </section>
+
+  <div class="services-filter-bar">
+    <div class="container">
+      <div class="services-filter-pills" id="services-filter">
+        <button class="filter-pill active" data-filter="all">All Services (6)</button>
+        <button class="filter-pill" data-filter="wealth">Investment &amp; PMS</button>
+        <button class="filter-pill" data-filter="tax-estate">Tax &amp; Estate</button>
+        <button class="filter-pill" data-filter="institutional">Family Office &amp; Treasury</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="services-detail-section">
+    <div class="container">
+
+      <!-- Service 1 -->
+      <div class="service-detail" id="portfolio-analysis" data-category="wealth">
+        <div class="service-detail-grid">
+          <div class="service-detail-media reveal">
+            <img src="assets/images/portfolio-analysis.jpg" alt="Portfolio Analysis & Investment Planning" class="service-detail-img" loading="lazy">
+            <div class="service-num">01</div>
+            <div class="service-detail-media-overlay"></div>
+            <span class="service-media-badge">Institutional PMS &amp; AIF</span>
+          </div>
+          <div class="service-detail-content reveal reveal-delay-1">
+            <div class="section-label">Investment Management</div>
+            <h2 class="service-detail-title">Portfolio Analysis &amp;<br><em>Investment Planning</em></h2>
+            <div class="gold-line"></div>
+            <p class="service-detail-body">We deal in Mutual Funds, Portfolio Management Services (PMS), Bonds, Private Equity, Alternative Investment Funds (AIF), and Real Estate — using strategies tailored to your investment objectives, risk tolerance, and time horizon.</p>
+            <p class="service-detail-body">Our dedicated in-house research team maintains a rigorous "white-list" of investment-worthy products, ensuring unbiased advisory aligned exclusively with your best financial interests.</p>
+            
+            <div class="service-feature-list">
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Proprietary fund whitelist with zero distributor bias</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Asset allocation rebalancing across market volatility cycles</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Direct access to Tier-1 Portfolio Managers &amp; Private Equity</span>
+              </div>
+            </div>
+
+            <div class="service-products">
+              <span class="service-product-tag">Mutual Funds</span>
+              <span class="service-product-tag">PMS</span>
+              <span class="service-product-tag">Bonds</span>
+              <span class="service-product-tag">Private Equity</span>
+              <span class="service-product-tag">AIF</span>
+              <span class="service-product-tag">Real Estate</span>
+            </div>
+
+            <div class="service-detail-action">
+              <a href="contact.html?service=portfolio" class="btn btn-primary btn-sm">Discuss Investment Strategy &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service 2 -->
+      <div class="service-detail" id="tax-planning" data-category="tax-estate">
+        <div class="service-detail-grid reverse">
+          <div class="service-detail-media reveal">
+            <img src="assets/images/tax-planning.jpg" alt="Personal Tax Planning & Liability Planning" class="service-detail-img" loading="lazy">
+            <div class="service-num">02</div>
+            <div class="service-detail-media-overlay"></div>
+            <span class="service-media-badge">Tax Alpha &amp; Optimization</span>
+          </div>
+          <div class="service-detail-content reveal reveal-delay-1">
+            <div class="section-label">Financial Planning</div>
+            <h2 class="service-detail-title">Personal Tax Planning &amp;<br><em>Liability Planning</em></h2>
+            <div class="gold-line"></div>
+            <p class="service-detail-body">Comprehensive analysis of your complete financial picture — efficient tax structuring, loan repayments, retirement cash flows, and children's higher education funds.</p>
+            <p class="service-detail-body">We ensure your hard-earned wealth is structured to legally minimize tax drag, allowing greater compound growth over multi-decade horizons.</p>
+            
+            <div class="service-feature-list">
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Capital gains harvesting &amp; tax loss offset strategies</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Holistic liability management &amp; debt optimization</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Retirement corpus longevity modeling</span>
+              </div>
+            </div>
+
+            <div class="service-products">
+              <span class="service-product-tag">Tax Optimisation</span>
+              <span class="service-product-tag">Liability Planning</span>
+              <span class="service-product-tag">Retirement Planning</span>
+              <span class="service-product-tag">Education Fund</span>
+              <span class="service-product-tag">Loan Structuring</span>
+            </div>
+
+            <div class="service-detail-action">
+              <a href="contact.html?service=tax" class="btn btn-primary btn-sm">Book Tax Structuring Call &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service 3 -->
+      <div class="service-detail" id="estate-planning" data-category="tax-estate">
+        <div class="service-detail-grid">
+          <div class="service-detail-media reveal">
+            <img src="assets/images/estate-planning.jpg" alt="Estate Planning & Succession" class="service-detail-img" loading="lazy">
+            <div class="service-num">03</div>
+            <div class="service-detail-media-overlay"></div>
+            <span class="service-media-badge">Private Family Trusts</span>
+          </div>
+          <div class="service-detail-content reveal reveal-delay-1">
+            <div class="section-label">Legacy &amp; Succession</div>
+            <h2 class="service-detail-title">Estate Planning &amp;<br><em>Succession</em></h2>
+            <div class="gold-line"></div>
+            <p class="service-detail-body">We cater to clients' estate and succession planning through bespoke wills, private trusts, and family business constitutions, ensuring a seamless and cost-efficient asset transfer to heirs.</p>
+            <p class="service-detail-body">We also formulate family business charters for multi-generational business dynasties — fostering unity, clear governance, and dispute-free transitions.</p>
+            
+            <div class="service-feature-list">
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Private &amp; discretionary family trust setup</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Family business constitution &amp; voting covenants</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Probate-resilient legacy distribution blueprints</span>
+              </div>
+            </div>
+
+            <div class="service-products">
+              <span class="service-product-tag">Will Creation</span>
+              <span class="service-product-tag">Family Trusts</span>
+              <span class="service-product-tag">Asset Transfer</span>
+              <span class="service-product-tag">Business Charter</span>
+              <span class="service-product-tag">Family Constitution</span>
+            </div>
+
+            <div class="service-detail-action">
+              <a href="contact.html?service=estate" class="btn btn-primary btn-sm">Consult on Estate Planning &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service 4 -->
+      <div class="service-detail" id="multi-generational-wealth-management" data-category="institutional">
+        <div class="service-detail-grid reverse">
+          <div class="service-detail-media reveal">
+            <img src="assets/images/multigen-wealth.jpg" alt="Multi-Generational Wealth Management" class="service-detail-img" loading="lazy">
+            <div class="service-num">04</div>
+            <div class="service-detail-media-overlay"></div>
+            <span class="service-media-badge">Family Office Governance</span>
+          </div>
+          <div class="service-detail-content reveal reveal-delay-1">
+            <div class="section-label">Family Office</div>
+            <h2 class="service-detail-title">Multi-Generational<br><em>Wealth Management</em></h2>
+            <div class="gold-line"></div>
+            <p class="service-detail-body">Multi-generational wealth management ensures that your family's heritage and capital are preserved, grown, and passed seamlessly to future generations.</p>
+            <p class="service-detail-body">We act as your dedicated institutional family office partner — providing continuity where relationship managers don't change every year, but remain trusted advisors for decades.</p>
+            
+            <div class="service-feature-list">
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Unified consolidated family portfolio reporting</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Next-generation financial literacy &amp; mentorship</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Institutional risk monitoring across market shocks</span>
+              </div>
+            </div>
+
+            <div class="service-products">
+              <span class="service-product-tag">Family Office</span>
+              <span class="service-product-tag">Generational Transfer</span>
+              <span class="service-product-tag">Capital Preservation</span>
+              <span class="service-product-tag">Legacy Planning</span>
+            </div>
+
+            <div class="service-detail-action">
+              <a href="contact.html?service=family-office" class="btn btn-primary btn-sm">Explore Family Office Services &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service 5 -->
+      <div class="service-detail" id="treasury-management" data-category="institutional">
+        <div class="service-detail-grid">
+          <div class="service-detail-media reveal">
+            <img src="assets/images/treasury-management.jpg" alt="Treasury Management" class="service-detail-img" loading="lazy">
+            <div class="service-num">05</div>
+            <div class="service-detail-media-overlay"></div>
+            <span class="service-media-badge">Corporate Liquidity Yield</span>
+          </div>
+          <div class="service-detail-content reveal reveal-delay-1">
+            <div class="section-label">Corporate Finance</div>
+            <h2 class="service-detail-title">Treasury<br><em>Management</em></h2>
+            <div class="gold-line"></div>
+            <p class="service-detail-body">Active cash flow management for SMEs, startups, corporate treasuries, and NGOs. We deploy surplus corporate cash into high-yield, liquid, and capital-protected instruments without compromising operational liquidity.</p>
+            <p class="service-detail-body">Our team assists corporate boards and CFOs with optimized short-term duration matching and yield enhancement.</p>
+            
+            <div class="service-feature-list">
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Overnight, liquid, and ultra-short duration parking</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Corporate credit evaluation &amp; zero-default mandate</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Statutory compliance &amp; tax-efficient surplus returns</span>
+              </div>
+            </div>
+
+            <div class="service-products">
+              <span class="service-product-tag">Cash Flow Management</span>
+              <span class="service-product-tag">Surplus Deployment</span>
+              <span class="service-product-tag">SME Advisory</span>
+              <span class="service-product-tag">Startup Finance</span>
+              <span class="service-product-tag">NGO Advisory</span>
+            </div>
+
+            <div class="service-detail-action">
+              <a href="contact.html?service=treasury" class="btn btn-primary btn-sm">Optimize Corporate Treasury &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service 6 -->
+      <div class="service-detail" id="charity" data-category="tax-estate">
+        <div class="service-detail-grid reverse">
+          <div class="service-detail-media reveal">
+            <img src="assets/images/philanthropy.jpg" alt="Philanthropy & Charitable Planning" class="service-detail-img" loading="lazy">
+            <div class="service-num">06</div>
+            <div class="service-detail-media-overlay"></div>
+            <span class="service-media-badge">Strategic Endowments</span>
+          </div>
+          <div class="service-detail-content reveal reveal-delay-1">
+            <div class="section-label">Giving &amp; Impact</div>
+            <h2 class="service-detail-title">Philanthropy &amp;<br><em>Charitable Planning</em></h2>
+            <div class="gold-line"></div>
+            <p class="service-detail-body">Strategic advisory and tie-ups with verified NGOs and institutions in the social sector. We help clients structure philanthropic giving in an impactful, sustainable, and tax-exempt manner.</p>
+            <p class="service-detail-body">Whether establishing an endowment, managing private foundations, or fulfilling corporate CSR requirements, we turn philanthropic aspirations into measurable social change.</p>
+            
+            <div class="service-feature-list">
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Endowment corpus perpetual yield management</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>CSR allocation structuring &amp; 80G tax benefit optimization</span>
+              </div>
+              <div class="service-feature-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Due-diligence and impact metric auditing</span>
+              </div>
+            </div>
+
+            <div class="service-products">
+              <span class="service-product-tag">Charitable Trusts</span>
+              <span class="service-product-tag">Endowment Planning</span>
+              <span class="service-product-tag">NGO Partnerships</span>
+              <span class="service-product-tag">CSR Planning</span>
+              <span class="service-product-tag">Tax-Efficient Giving</span>
+            </div>
+
+            <div class="service-detail-action">
+              <a href="contact.html?service=philanthropy" class="btn btn-primary btn-sm">Structure Philanthropic Fund &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-bg-glow"></div>
+    <div class="container">
+      <div class="cta-inner">
+        <div class="section-label reveal" style="justify-content:center;">Get Started</div>
+        <h2 class="cta-h2 reveal reveal-delay-1">Ready to Build Your<br><em>Financial Future?</em></h2>
+        <p class="cta-desc reveal reveal-delay-2">Schedule a confidential conversation with one of our principals. No pressure, no generic templates — just honest, expert advice tailored to you.</p>
+        <div class="cta-actions reveal reveal-delay-3">
+          <a href="contact.html" class="btn btn-primary">Book a Consultation<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+          <a href="tel:+911126521217" class="btn btn-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>Call 011-26521217</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: var(--space-8) 0; flex-wrap: wrap; gap: var(--space-4);">
+        <a href="index.html" class="nav-logo"><img src="assets/images/logo.png" alt="Vintage Finvest" height="36" onerror="this.style.display='none'"><div class="nav-logo-text"><span class="nav-logo-name">Vintage Finvest</span><span class="nav-logo-sub">Services Pvt. Ltd.</span></div></a>
+        <div style="display: flex; gap: var(--space-6); flex-wrap: wrap;">
+          <a href="index.html" class="footer-link">Home</a><a href="about.html" class="footer-link">About</a><a href="contact.html" class="footer-link">Contact</a><a href="privacy-policy.html" class="footer-link">Privacy</a>
+        </div>
+      </div>
+      <div class="footer-bottom"><p class="footer-copy">© 2024 Vintage Finvest Services Private Limited. All Rights Reserved. AMFI Registered ARN-79846.</p></div>
+    </div>
+  </footer>
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RPC0GM1YRM"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-RPC0GM1YRM');</script>
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
