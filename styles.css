@@ -483,34 +483,25 @@ ul, ol { list-style: none; }
 }
 
 .nav-logo {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
   text-decoration: none;
+  transition: opacity var(--duration-fast), transform var(--duration-fast);
 }
-.nav-logo img {
-  display: none !important;
+.nav-logo:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+.nav-logo img,
+.nav-logo-img {
+  height: 42px;
+  width: auto;
+  max-width: 210px;
+  object-fit: contain;
+  display: block;
 }
 .nav-logo-text {
-  display: flex !important;
-  flex-direction: column;
-  line-height: 1.15;
-}
-.nav-logo-name {
-  font-family: var(--font-serif);
-  font-size: 1.42rem;
-  font-weight: 600;
-  color: #FFFFFF !important;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-.nav-logo-sub {
-  font-family: var(--font-sans);
-  font-size: 0.74rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9) !important;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  display: none !important;
 }
 
 .nav-menu {
@@ -2633,25 +2624,26 @@ ul, ol { list-style: none; }
   border-bottom: 1px solid var(--navy-border);
 }
 .footer-logo {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
   margin-bottom: var(--space-5);
   text-decoration: none;
+  transition: opacity var(--duration-fast), transform var(--duration-fast);
+}
+.footer-logo:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 .footer-logo img,
-img[src*="logo"] {
-  height: 40px;
+.footer-logo-img {
+  height: 44px;
   width: auto;
-  filter: grayscale(100%) brightness(1.1) contrast(1.05);
-  -webkit-filter: grayscale(100%) brightness(1.1) contrast(1.05);
-  opacity: 0.92;
-  transition: opacity var(--duration-fast), filter var(--duration-fast);
+  max-width: 220px;
+  object-fit: contain;
+  display: block;
 }
-.footer-logo img:hover,
-img[src*="logo"]:hover {
-  opacity: 1;
-  filter: grayscale(100%) brightness(1.25);
+.footer-logo .nav-logo-text {
+  display: none !important;
 }
 .footer-tagline {
   font-size: var(--text-sm);
