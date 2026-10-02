@@ -48,89 +48,266 @@
       });
     });
   }
+  // ============================================================
+  // HERO CRYSTAL RAIN — confined to hero section only
+  // Canvas: #hero-canvas (position:absolute inside .hero)
+  // Hero has overflow:hidden — particles are clipped naturally.
+  // Click/touch: hero element only, coords relative to hero rect.
+  // IntersectionObserver: pauses when hero scrolls out of view.
+  // ============================================================
+  (function() {
+    var cvs = document.getElementById('hero-canvas');
+    if (!cvs) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  // ——— HERO CANVAS: Ambient Gold Particles ———
-  const canvas = document.getElementById('hero-canvas');
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    let W, H, particles = [], mouse = { x: -9999, y: -9999 };
-    const PARTICLE_COUNT = window.innerWidth < 768 ? 30 : 60;
+    var ctx = cvs.getContext('2d');
+    var W = 0, H = 0, dpr = 1;
+    var rain   = [];
+    var clicks = [];
+    var raf    = null;
+    var heroVisible = true;
+    var tabVisible  = !document.hidden;
 
+    var GOLDS = [
+      '255, 235, 158',
+      '255, 213, 105',
+      '244, 192,  85',
+      '255, 246, 200',
+      '216, 167,  70',
+    ];
+
+    var isMobile = window.innerWidth < 768;
+    var RAIN_N   = isMobile ? 55 : 90;
+
+    // ── Resize: match the hero section dimensions ─────────────
     function resize() {
-      W = canvas.width = canvas.offsetWidth;
-      H = canvas.height = canvas.offsetHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var rect = cvs.parentElement ? cvs.parentElement.getBoundingClientRect() : cvs.getBoundingClientRect();
+      W = rect.width  || window.innerWidth;
+      H = rect.height || window.innerHeight;
+      cvs.width  = Math.round(W * dpr);
+      cvs.height = Math.round(H * dpr);
+      if (ctx.resetTransform) ctx.resetTransform();
+      ctx.scale(dpr, dpr);
     }
 
-    function createParticle() {
-      // Disperse golden particles over a larger top-left area
-      const x = Math.random() * (W * 0.85);
-      const y = Math.random() * (H * 0.75);
-      const size = Math.random() * 1.6 + 0.4;
-      // Decreased base animation speed
-      const speedX = (Math.random() - 0.5) * 0.08;
-      const speedY = -Math.random() * 0.12 - 0.04;
-      const life = Math.random() * 260 + 120;
-      const alpha = Math.random() * 0.55 + 0.15;
-      return { x, y, size, speedX, speedY, life, maxLife: life, alpha };
+    // ── Particle: falls from above hero top to hero bottom ────
+    function mkRain(prefill) {
+      var xNorm = Math.pow(Math.random(), 1.6);
+      var x = xNorm * W * 0.62 + (Math.random() - 0.5) * 60;
+      var y = prefill ? -10 + Math.random() * (H + 10) : -(8 + Math.random() * 80);
+      var sz = 1.1 + Math.random() * 2.6;
+      return {
+        x: x, y: y, sz: sz,
+        vx: (Math.random() - 0.35) * 0.55,
+        vy: 0.75 + Math.random() * 1.55,
+        rot : Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.042,
+        swA : 0.12 + Math.random() * 0.40,
+        swF : 0.011 + Math.random() * 0.021,
+        swP : Math.random() * Math.PI * 2,
+        a   : 0.32 + Math.random() * 0.44,
+        twF : 0.016 + Math.random() * 0.034,
+        twP : Math.random() * Math.PI * 2,
+        col : GOLDS[Math.floor(Math.random() * GOLDS.length)],
+        typ : Math.random() < 0.38 ? 0 : (Math.random() < 0.52 ? 1 : 2),
+      };
     }
 
-    function init() {
-      particles = [];
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const p = createParticle();
-        p.life = Math.random() * p.maxLife;
-        particles.push(p);
-      }
+    // ── Click crystal: coords are relative to hero rect ───────
+    function mkClick(cx, cy) {
+      var sz   = 1.8 + Math.random() * 2.2;
+      var life = 90 + Math.floor(Math.random() * 60);
+      return {
+        x: cx, y: cy, sz: sz,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: 0.4 + Math.random() * 0.6,
+        rot : Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.04,
+        swA : 0.1 + Math.random() * 0.3,
+        swF : 0.01 + Math.random() * 0.02,
+        swP : Math.random() * Math.PI * 2,
+        a   : 0.82 + Math.random() * 0.16,
+        life: life, maxL: life,
+        col : GOLDS[Math.floor(Math.random() * GOLDS.length)],
+        typ : Math.random() < 0.38 ? 0 : (Math.random() < 0.52 ? 1 : 2),
+      };
     }
 
-    function draw() {
+    // ── Draw helpers ──────────────────────────────────────────
+    function dDiamond(x, y, sz, rot, a, col) {
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.translate(x, y); ctx.rotate(rot);
+      var w = sz, h = sz * 1.82;
+      ctx.shadowColor = 'rgba(' + col + ',0.50)'; ctx.shadowBlur = sz * 2.6;
+      ctx.beginPath();
+      ctx.moveTo(0,-h); ctx.lineTo(w,-h*0.17); ctx.lineTo(w*0.56,h*0.70);
+      ctx.lineTo(0,h); ctx.lineTo(-w*0.56,h*0.70); ctx.lineTo(-w,-h*0.17);
+      ctx.closePath();
+      var g = ctx.createLinearGradient(-w,-h,w,h);
+      g.addColorStop(0,    'rgba(255,252,245,' + a + ')');
+      g.addColorStop(0.42, 'rgba(' + col + ',' + (a*0.87) + ')');
+      g.addColorStop(1,    'rgba(' + col + ',' + (a*0.63) + ')');
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 0.40; ctx.strokeStyle = 'rgba(255,255,255,' + (a*0.55) + ')';
+      ctx.beginPath(); ctx.moveTo(0,-h); ctx.lineTo(0,h);
+      ctx.moveTo(-w,-h*0.17); ctx.lineTo(w,-h*0.17); ctx.stroke();
+      ctx.shadowBlur = sz*0.7; ctx.beginPath();
+      ctx.arc(w*0.16,-h*0.40,sz*0.20,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,' + (a*0.82) + ')'; ctx.fill();
+      ctx.restore();
+    }
+    function dStar(x, y, sz, rot, a, col) {
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.translate(x, y); ctx.rotate(rot);
+      ctx.shadowColor = 'rgba(' + col + ',0.60)'; ctx.shadowBlur = sz*3.0;
+      var arm = sz*1.9, hw = sz*0.24;
+      ctx.beginPath(); ctx.moveTo(0,-arm);
+      ctx.quadraticCurveTo(hw,-hw,arm,0); ctx.quadraticCurveTo(hw,hw,0,arm);
+      ctx.quadraticCurveTo(-hw,hw,-arm,0); ctx.quadraticCurveTo(-hw,-hw,0,-arm);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(' + col + ',' + a + ')'; ctx.fill();
+      ctx.shadowBlur = sz*0.6; ctx.beginPath();
+      ctx.arc(0,0,sz*0.38,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1,a*1.2) + ')'; ctx.fill();
+      ctx.restore();
+    }
+    function dGem(x, y, sz, a, col) {
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.shadowColor = 'rgba(' + col + ',0.50)'; ctx.shadowBlur = sz*2.0;
+      ctx.beginPath(); ctx.arc(x,y,sz*0.85,0,Math.PI*2);
+      var g = ctx.createRadialGradient(x-sz*0.26,y-sz*0.26,sz*0.04,x,y,sz*0.85);
+      g.addColorStop(0,'rgba(255,255,240,' + a + ')');
+      g.addColorStop(1,'rgba(' + col + ',' + (a*0.52) + ')');
+      ctx.fillStyle = g; ctx.fill(); ctx.restore();
+    }
+    function drawP(p, a) {
+      if      (p.typ === 0) dDiamond(p.x,p.y,p.sz,p.rot,a,p.col);
+      else if (p.typ === 1) dStar(p.x,p.y,p.sz,p.rot,a,p.col);
+      else                  dGem(p.x,p.y,p.sz,a,p.col);
+    }
+
+    // ── Main loop ─────────────────────────────────────────────
+    function tick(ts) {
       ctx.clearRect(0, 0, W, H);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        const dx = mouse.x - p.x;
-        const dy = mouse.y - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        // Reduced magnetic attraction radius and force
-        if (dist < 110) {
-          const force = (110 - dist) / 110 * 0.002;
-          p.x += dx * force;
-          p.y += dy * force;
-        }
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.life--;
 
-        const progress = p.life / p.maxLife;
-        const fadeAlpha = p.alpha * (progress < 0.2 ? progress / 0.2 : progress > 0.8 ? (1 - progress) / 0.2 : 1);
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(200, 169, 110, ${fadeAlpha})`;
-        ctx.fill();
-
-        if (p.life <= 0) {
-          particles[i] = createParticle();
-          particles[i].x = Math.random() * (W * 0.85);
-          particles[i].y = (H * 0.4) + Math.random() * (H * 0.35);
-        }
+      for (var i = 0; i < rain.length; i++) {
+        var p = rain[i];
+        p.swP += p.swF;
+        p.x   += p.vx + Math.sin(p.swP) * p.swA;
+        p.y   += p.vy;
+        p.rot += p.rotV;
+        var fadeIn  = Math.min(1, p.y / 40);
+        var fadeOut = Math.min(1, (H - p.y) / 40);
+        var fade    = Math.max(0, Math.min(fadeIn, fadeOut));
+        var tw      = 0.76 + 0.24 * Math.sin(ts * 0.0007 * p.twF * 60 + p.twP);
+        var a       = p.a * fade * tw;
+        if (a > 0.008) drawP(p, a);
+        if (p.y > H + 22 || p.x > W + 60 || p.x < -60) rain[i] = mkRain(false);
       }
-      requestAnimationFrame(draw);
+
+      for (var j = clicks.length - 1; j >= 0; j--) {
+        var c = clicks[j];
+        c.swP += c.swF;
+        c.x   += c.vx + Math.sin(c.swP) * c.swA;
+        c.y   += c.vy;
+        c.rot += c.rotV;
+        c.life--;
+        var t  = Math.max(0, c.life / c.maxL);
+        var ca = c.a * (t < 0.15 ? (t / 0.15) : Math.pow(t, 0.7));
+        if (ca > 0.008) drawP(c, ca);
+        // Remove if faded or fell below hero
+        if (c.life <= 0 || c.y > H + 30) clicks.splice(j, 1);
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(tick);
     }
 
-    window.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+    // ── Pool init ─────────────────────────────────────────────
+    function init() {
+      rain = [];
+      for (var i = 0; i < RAIN_N; i++) rain.push(mkRain(true));
+    }
+
+    function isAlive() { return heroVisible && tabVisible; }
+
+    function start() {
+      if (!raf && isAlive()) raf = requestAnimationFrame(tick);
+    }
+    function stop() {
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      // Clear canvas when paused so no ghost particles remain
+      ctx.clearRect(0, 0, W, H);
+    }
+
+    // ── Hero IntersectionObserver — pauses when scrolled away ─
+    var heroSection = cvs.closest('section') || cvs.parentElement;
+
+    var heroObs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(en) {
+        heroVisible = en.isIntersecting;
+        if (heroVisible) {
+          start();
+        } else {
+          stop();
+          clicks = []; // drop pending click crystals
+        }
+      });
+    }, { threshold: 0.05 });
+    heroObs.observe(heroSection);
+
+    // ── Tab visibility ────────────────────────────────────────
+    document.addEventListener('visibilitychange', function() {
+      tabVisible = !document.hidden;
+      tabVisible ? start() : stop();
+    });
+
+    // ── Click / touch — coordinates relative to hero rect ─────
+    // Use heroSection as the event target; canvas has pointer-events:none
+    var BLOCKED = 'a,button,input,select,textarea,[role="button"]';
+    var lastTap = 0;
+
+    heroSection.addEventListener('click', function(e) {
+      if (!heroVisible) return;
+      if (e.target.closest(BLOCKED)) return;
+      var rect = heroSection.getBoundingClientRect();
+      var cx = e.clientX - rect.left;
+      var cy = e.clientY - rect.top;
+      // Only spawn if within hero bounds
+      if (cx < 0 || cy < 0 || cx > W || cy > H) return;
+      clicks.push(mkClick(cx, cy));
+      if (clicks.length > 50) clicks.splice(0, clicks.length - 50);
     }, { passive: true });
 
-    window.addEventListener('resize', () => { resize(); init(); }, { passive: true });
+    heroSection.addEventListener('touchend', function(e) {
+      if (!heroVisible) return;
+      var now = Date.now();
+      if (now - lastTap < 350) return;
+      lastTap = now;
+      if (e.target.closest(BLOCKED)) return;
+      var t    = e.changedTouches[0];
+      var rect = heroSection.getBoundingClientRect();
+      var cx = t.clientX - rect.left;
+      var cy = t.clientY - rect.top;
+      if (cx < 0 || cy < 0 || cx > W || cy > H) return;
+      clicks.push(mkClick(cx, cy));
+      if (clicks.length > 50) clicks.splice(0, clicks.length - 50);
+    }, { passive: true });
 
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      resize();
-      init();
-      draw();
-    }
-  }
+    // ── Resize ────────────────────────────────────────────────
+    var rTimer;
+    window.addEventListener('resize', function() {
+      clearTimeout(rTimer);
+      rTimer = setTimeout(function() { resize(); init(); }, 180);
+    }, { passive: true });
+
+    // ── Boot ─────────────────────────────────────────────────
+    resize();
+    init();
+    start();
+  }());
 
   // ——— SCROLL REVEAL OBSERVER ———
   const revealEls = document.querySelectorAll('.reveal');
