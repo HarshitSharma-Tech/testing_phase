@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="preload" as="image" href="assets/video/hero_poster.webp" type="image/webp" fetchpriority="high">
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Investment Planning &amp; Wealth Management in Delhi | Vintage Finvest</title>
@@ -23,7 +25,7 @@
   <meta name="twitter:description" content="Explore investment planning, wealth management, tax planning and financial advisory services in New Delhi with Vintage Finvest.">
   <meta name="twitter:image" content="https://www.vintagefinvest.com/assets/images/architecture.jpg">
 
-  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="icon" type="image/png" href="assets/images/logo.webp">
   <link rel="stylesheet" href="styles.css">
 
   <!-- Inline SVG Icons (no external requests) -->
@@ -52,7 +54,7 @@
     "name": "Vintage Finvest Services Private Limited",
     "alternateName": "Vintage Finvest",
     "url": "https://www.vintagefinvest.com/",
-    "logo": "https://www.vintagefinvest.com/assets/images/logo.png",
+    "logo": "https://www.vintagefinvest.com/assets/images/logo.webp",
     "image": "https://www.vintagefinvest.com/assets/images/architecture.jpg",
     "description": "Boutique investment planning, wealth management, personal tax planning, and financial advisory services in New Delhi.",
     "telephone": "+91-11-26521217",
@@ -152,7 +154,7 @@
     "publisher": {
       "@type": "Organization",
       "name": "Vintage Finvest Services Private Limited",
-      "logo": "https://www.vintagefinvest.com/assets/images/logo.png"
+      "logo": "https://www.vintagefinvest.com/assets/images/logo.webp"
     }
   }
   </script>
@@ -276,7 +278,7 @@
   <nav class="site-nav with-topbar" id="site-nav" aria-label="Main Navigation">
     <div class="container nav-inner">
       <a href="index.html" class="nav-logo" aria-label="Vintage Finvest Home">
-        <img src="assets/images/logo.png" alt="Vintage Finvest Logo" id="nav-logo-img" onerror="this.style.display='none'">
+        <img src="assets/images/logo.webp" alt="Vintage Finvest Logo" id="nav-logo-img" onerror="this.style.display='none'">
         <div class="nav-logo-text">
           <span class="nav-logo-name">Vintage Finvest</span>
           <span class="nav-logo-sub">Services Pvt. Ltd.</span>
@@ -328,7 +330,7 @@
         id="hero-video"
         autoplay muted loop playsinline
         preload="metadata"
-        poster="assets/video/hero_poster.jpg"
+        poster="assets/video/hero_poster.webp" preload="metadata"
         aria-hidden="true">
         <source src="/videos/vintage-hero-animation.mp4" type="video/mp4">
         <source src="assets/video/vintage_hero_bg.webm" type="video/webm">
@@ -430,7 +432,11 @@
       <div class="about-grid">
         <div class="about-visual reveal">
           <div class="about-image-wrap">
-            <img src="assets/images/estate-planning.jpg" alt="Vintage Finvest — Advisory &amp; Wealth Governance" class="about-clean-img" loading="lazy">
+            <picture>
+  <source srcset="assets/images/estate-planning-mob.webp" media="(max-width: 600px)" type="image/webp">
+  <source srcset="assets/images/estate-planning.webp" type="image/webp">
+  <img src="assets/images/estate-planning.webp" alt="Estate Planning, Private Family Trusts and Succession Planning in New Delhi" loading="lazy" decoding="async" width="900" height="600">
+</picture>
             <div class="about-image-border"></div>
             <div class="about-float-stat">
               <span class="about-float-num">75+</span>
@@ -529,7 +535,11 @@
         <!-- Service 1: Portfolio Analysis -->
         <article class="service-card-white reveal" data-category="wealth" aria-labelledby="svc-h-1">
           <div class="service-card-media-white">
-            <img src="assets/images/portfolio-analysis.jpg" alt="Portfolio Analysis and Mutual Fund Investment Planning in New Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/portfolio-analysis-mob.webp" media="(max-width: 600px)" type="image/webp">
+  <source srcset="assets/images/portfolio-analysis.webp" type="image/webp">
+  <img src="assets/images/portfolio-analysis.webp" alt="Portfolio Analysis and Mutual Fund Investment Planning in New Delhi" loading="lazy" decoding="async" width="900" height="600">
+</picture>
             <div class="service-media-overlay-white"></div>
             <span class="service-card-num-light">01</span>
             <span class="service-badge-pill-light">Mutual Funds &amp; PMS</span>
@@ -576,7 +586,11 @@
         <!-- Service 2: Tax Planning -->
         <article class="service-card-white reveal reveal-delay-1" data-category="tax" aria-labelledby="svc-h-2">
           <div class="service-card-media-white">
-            <img src="assets/images/tax-planning.jpg" alt="Personal Tax Planning, Liability Management and Retirement Structuring in Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/tax-planning-mob.webp" media="(max-width: 600px)" type="image/webp">
+  <source srcset="assets/images/tax-planning.webp" type="image/webp">
+  <img src="assets/images/tax-planning.webp" alt="Personal Tax Planning, Liability Management and Retirement Structuring in Delhi" loading="lazy" decoding="async" width="900" height="600">
+</picture>
             <div class="service-media-overlay-white"></div>
             <span class="service-card-num-light">02</span>
             <span class="service-badge-pill-light">Tax Alpha &amp; Structuring</span>
@@ -623,7 +637,11 @@
         <!-- Service 3: Estate Planning -->
         <article class="service-card-white reveal reveal-delay-2" data-category="estate" aria-labelledby="svc-h-3">
           <div class="service-card-media-white">
-            <img src="assets/images/estate-planning.jpg" alt="Estate Planning, Private Family Trusts and Succession Planning in New Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/estate-planning-mob.webp" media="(max-width: 600px)" type="image/webp">
+  <source srcset="assets/images/estate-planning.webp" type="image/webp">
+  <img src="assets/images/estate-planning.webp" alt="Estate Planning, Private Family Trusts and Succession Planning in New Delhi" loading="lazy" decoding="async" width="900" height="600">
+</picture>
             <div class="service-media-overlay-white"></div>
             <span class="service-card-num-light">03</span>
             <span class="service-badge-pill-light">Private Family Trusts</span>
@@ -670,7 +688,11 @@
         <!-- Service 4: Multi-Generational Wealth -->
         <article class="service-card-white reveal" data-category="wealth" aria-labelledby="svc-h-4">
           <div class="service-card-media-white">
-            <img src="assets/images/multigen-wealth.jpg" alt="Multi-Generational Wealth Management and Family Office Advisory in Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/multigen-wealth-mob.webp" media="(max-width: 600px)" type="image/webp">
+  <source srcset="assets/images/multigen-wealth.webp" type="image/webp">
+  <img src="assets/images/multigen-wealth.webp" alt="Multi-Generational Wealth Management and Family Office Advisory in Delhi" loading="lazy" decoding="async" width="900" height="600">
+</picture>
             <div class="service-media-overlay-white"></div>
             <span class="service-card-num-light">04</span>
             <span class="service-badge-pill-light">Family Office Governance</span>
@@ -717,7 +739,11 @@
         <!-- Service 5: Treasury Management -->
         <article class="service-card-white reveal reveal-delay-1" data-category="tax" aria-labelledby="svc-h-5">
           <div class="service-card-media-white">
-            <img src="assets/images/treasury-management.jpg" alt="Corporate Treasury Management and Cash Flow Optimization in New Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/treasury-management-mob.webp" media="(max-width: 600px)" type="image/webp">
+  <source srcset="assets/images/treasury-management.webp" type="image/webp">
+  <img src="assets/images/treasury-management.webp" alt="Corporate Treasury Management and Cash Flow Optimization in New Delhi" loading="lazy" decoding="async" width="900" height="600">
+</picture>
             <div class="service-media-overlay-white"></div>
             <span class="service-card-num-light">05</span>
             <span class="service-badge-pill-light">Corporate Liquidity Yield</span>
@@ -764,7 +790,11 @@
         <!-- Service 6: Philanthropy -->
         <article class="service-card-white reveal reveal-delay-2" data-category="estate" aria-labelledby="svc-h-6">
           <div class="service-card-media-white">
-            <img src="assets/images/philanthropy.jpg" alt="Philanthropy and Strategic Charitable Endowments Advisory in Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/philanthropy-mob.webp" media="(max-width: 600px)" type="image/webp">
+  <source srcset="assets/images/philanthropy.webp" type="image/webp">
+  <img src="assets/images/philanthropy.webp" alt="Philanthropy and Strategic Charitable Endowments Advisory in Delhi" loading="lazy" decoding="async" width="900" height="600">
+</picture>
             <div class="service-media-overlay-white"></div>
             <span class="service-card-num-light">06</span>
             <span class="service-badge-pill-light">Strategic Endowments</span>
@@ -1423,7 +1453,10 @@
         <!-- Ashwin Karmarkar -->
         <div class="team-card reveal">
           <div class="team-card-media">
-            <img src="assets/images/ashwin-karmarkar.jpg" alt="Ashwin Karmarkar — Principal Wealth Advisor at Vintage Finvest New Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/ashwin-karmarkar.webp" type="image/webp">
+  <img src="assets/images/ashwin-karmarkar.webp" alt="Ashwin Karmarkar - Principal Wealth Advisor" loading="lazy" decoding="async" width="300" height="360">
+</picture>
             <div class="team-card-overlay"></div>
             <a href="https://in.linkedin.com/in/ashwin-karmarkar-69a185a" target="_blank" rel="noopener" class="team-social" aria-label="Ashwin Karmarkar on LinkedIn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
@@ -1450,7 +1483,10 @@
         <!-- Vineet Bhasin -->
         <div class="team-card reveal reveal-delay-1">
           <div class="team-card-media">
-            <img src="assets/images/vineet-bhasin.jpg" alt="Vineet Bhasin — Principal Wealth Advisor at Vintage Finvest New Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/vineet-bhasin.webp" type="image/webp">
+  <img src="assets/images/vineet-bhasin.webp" alt="Vineet Bhasin - Principal Wealth Advisor" loading="lazy" decoding="async" width="300" height="360">
+</picture>
             <div class="team-card-overlay"></div>
             <a href="https://in.linkedin.com/in/vineet-bhasin-2ab159160" target="_blank" rel="noopener" class="team-social" aria-label="Vineet Bhasin on LinkedIn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
@@ -1477,7 +1513,10 @@
         <!-- Ajay Bajaj -->
         <div class="team-card reveal reveal-delay-2">
           <div class="team-card-media">
-            <img src="assets/images/ajay-bajaj.jpg" alt="Ajay Bajaj — Principal Wealth Advisor at Vintage Finvest New Delhi" loading="lazy">
+            <picture>
+  <source srcset="assets/images/ajay-bajaj.webp" type="image/webp">
+  <img src="assets/images/ajay-bajaj.webp" alt="Ajay Bajaj - Principal Wealth Advisor" loading="lazy" decoding="async" width="300" height="360">
+</picture>
             <div class="team-card-overlay"></div>
             <a href="https://www.linkedin.com/in/ajay-bajaj-25580213/" target="_blank" rel="noopener" class="team-social" aria-label="Ajay Bajaj on LinkedIn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
@@ -1863,7 +1902,7 @@
         <!-- Company Info -->
         <div>
           <a href="index.html" class="footer-logo">
-            <img src="assets/images/logo.png" alt="Vintage Finvest" onerror="this.style.display='none'">
+            <img src="assets/images/logo.webp" alt="Vintage Finvest" onerror="this.style.display='none'">
             <div class="nav-logo-text">
               <span class="nav-logo-name">Vintage Finvest</span>
               <span class="nav-logo-sub">Services Pvt. Ltd.</span>
@@ -1979,7 +2018,10 @@
       <div class="wa-card-header">
         <div class="wa-header-brand">
           <div class="wa-advisor-avatar-wrap">
-            <img src="assets/images/ashwin-karmarkar.jpg" alt="Ashwin Karmarkar - Principal Wealth Advisor" class="wa-advisor-avatar">
+            <picture>
+  <source srcset="assets/images/ashwin-karmarkar.webp" type="image/webp">
+  <img src="assets/images/ashwin-karmarkar.webp" alt="Ashwin Karmarkar - Principal Wealth Advisor" loading="lazy" decoding="async" width="300" height="360">
+</picture>
             <span class="wa-online-pulse" title="Advisor Online"></span>
           </div>
           <div class="wa-header-info">
