@@ -62,13 +62,15 @@
     }
 
     function createParticle() {
-      const x = Math.random() * W;
-      const y = Math.random() * H;
-      const size = Math.random() * 1.8 + 0.5;
-      const speedX = (Math.random() - 0.5) * 0.25;
-      const speedY = -Math.random() * 0.4 - 0.1;
-      const life = Math.random() * 200 + 100;
-      const alpha = Math.random() * 0.6 + 0.2;
+      // Disperse golden particles over a larger top-left area
+      const x = Math.random() * (W * 0.85);
+      const y = Math.random() * (H * 0.75);
+      const size = Math.random() * 1.6 + 0.4;
+      // Decreased base animation speed
+      const speedX = (Math.random() - 0.5) * 0.08;
+      const speedY = -Math.random() * 0.12 - 0.04;
+      const life = Math.random() * 260 + 120;
+      const alpha = Math.random() * 0.55 + 0.15;
       return { x, y, size, speedX, speedY, life, maxLife: life, alpha };
     }
 
@@ -88,8 +90,9 @@
         const dx = mouse.x - p.x;
         const dy = mouse.y - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 180) {
-          const force = (180 - dist) / 180 * 0.012;
+        // Reduced magnetic attraction radius and force
+        if (dist < 110) {
+          const force = (110 - dist) / 110 * 0.002;
           p.x += dx * force;
           p.y += dy * force;
         }
@@ -107,8 +110,8 @@
 
         if (p.life <= 0) {
           particles[i] = createParticle();
-          particles[i].x = Math.random() * W;
-          particles[i].y = H * 0.8 + Math.random() * H * 0.2;
+          particles[i].x = Math.random() * (W * 0.85);
+          particles[i].y = (H * 0.4) + Math.random() * (H * 0.35);
         }
       }
       requestAnimationFrame(draw);
