@@ -1441,32 +1441,34 @@ ul, ol { list-style: none; }
   font-size: 11px;
   font-weight: 700;
   color: #07101E;
-  background: #F4EFE6;
-  border: 1px solid #D9CDB8;
+  background: #EFE8DC;
+  border: 1px solid #D6C8B2;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 6px;
   letter-spacing: 0.02em;
 }
 
 .service-title-light {
-  font-family: var(--font-serif);
-  font-size: 1.34rem;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 750;
   color: #07101E;
-  line-height: 1.25;
+  line-height: 1.32;
   margin-bottom: 8px;
-  min-height: 54px;
+  min-height: 52px;
+  letter-spacing: -0.02em;
 }
 
 .service-tagline-light {
-  font-size: 0.835rem;
-  color: #8C6A2E;
-  font-style: italic;
+  font-size: 0.86rem;
+  color: #4B5563;
+  font-style: normal;
+  font-weight: 500;
   line-height: 1.5;
   margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed rgba(200, 169, 110, 0.3);
-  min-height: 48px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #EAE3D5;
+  min-height: 46px;
 }
 
 .service-checklist-light {
@@ -1483,9 +1485,9 @@ ul, ol { list-style: none; }
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 0.835rem;
-  color: #4A5568;
-  line-height: 1.45;
+  font-size: 0.845rem;
+  color: #374151;
+  line-height: 1.48;
 }
 
 .service-checklist-light li svg {
@@ -1496,20 +1498,20 @@ ul, ol { list-style: none; }
 
 .service-checklist-light li strong {
   color: #07101E;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .service-impact-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: #FAF7F2;
-  border: 1px solid #E2D7C3;
+  background: #F4EFE6;
+  border: 1px solid #D8CCB9;
   padding: 6px 12px;
   border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #6C5427;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #07101E;
   margin-top: auto;
   margin-bottom: 16px;
 }
@@ -1532,17 +1534,17 @@ ul, ol { list-style: none; }
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 11px 16px;
+  padding: 12px 18px;
   background: #07101E;
   border: 1px solid #07101E;
   border-radius: 8px;
   color: #FFFFFF;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   text-decoration: none;
   transition: all 0.25s ease;
-  box-shadow: 0 4px 12px rgba(7, 16, 30, 0.15);
+  box-shadow: 0 4px 12px rgba(7, 16, 30, 0.12);
 }
 
 .service-action-btn-white svg {
