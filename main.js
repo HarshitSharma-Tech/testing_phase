@@ -100,12 +100,12 @@
       var sz = (1.1 + Math.random() * 2.6) * 1.15;
       return {
         x: x, y: y, sz: sz,
-        vx: (Math.random() - 0.35) * 0.27,
-        vy: (0.75 + Math.random() * 1.55) * 0.49,
+        vx: (Math.random() - 0.35) * 0.16,
+        vy: (0.75 + Math.random() * 1.55) * 0.294,
         rot : Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.020,
+        rotV: (Math.random() - 0.5) * 0.012,
         swA : 0.12 + Math.random() * 0.40,
-        swF : (0.011 + Math.random() * 0.021) * 0.52,
+        swF : (0.011 + Math.random() * 0.021) * 0.31,
         swP : Math.random() * Math.PI * 2,
         a   : 0.65 + Math.random() * 0.35,
         twF : 0.016 + Math.random() * 0.034,
@@ -118,15 +118,15 @@
     // ── Click crystal: coords are relative to hero rect ───────
     function mkClick(cx, cy) {
       var sz   = (1.8 + Math.random() * 2.2) * 1.15;
-      var life = 180 + Math.floor(Math.random() * 120);
+      var life = 260 + Math.floor(Math.random() * 160);
       return {
         x: cx, y: cy, sz: sz,
-        vx: (Math.random() - 0.5) * 0.29,
-        vy: (0.4 + Math.random() * 0.6) * 0.49,
+        vx: (Math.random() - 0.5) * 0.17,
+        vy: (0.4 + Math.random() * 0.6) * 0.294,
         rot : Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.020,
+        rotV: (Math.random() - 0.5) * 0.012,
         swA : 0.1 + Math.random() * 0.3,
-        swF : (0.01 + Math.random() * 0.02) * 0.52,
+        swF : (0.01 + Math.random() * 0.02) * 0.31,
         swP : Math.random() * Math.PI * 2,
         a   : 0.95 + Math.random() * 0.05,
         life: life, maxL: life,
