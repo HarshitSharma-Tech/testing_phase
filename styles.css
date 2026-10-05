@@ -1071,62 +1071,43 @@ body.page-light .nav-logo-sub {
 }
 .about-float-stat {
   position: absolute;
-  top: var(--space-6);
-  right: var(--space-6);
-  background: rgba(7, 16, 30, 0.9);
-  border: 1px solid var(--gold-champagne);
-  border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-6);
+  top: 24px;
+  right: -16px;
+  background: linear-gradient(135deg, rgba(8, 20, 38, 0.96) 0%, rgba(4, 10, 20, 0.98) 100%);
+  border: 1.5px solid rgba(200, 169, 110, 0.65);
+  border-radius: 14px;
+  padding: 14px 20px;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
-  z-index: 2;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 24px rgba(200, 169, 110, 0.22);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 10;
+  transition: transform var(--duration-med) var(--ease-out), box-shadow var(--duration-med);
+}
+.about-float-stat:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 32px rgba(200, 169, 110, 0.35);
+  border-color: var(--gold-bright);
 }
 .about-float-num {
   display: block;
   font-family: var(--font-serif);
-  font-size: var(--text-3xl);
-  font-weight: 600;
-  color: var(--gold-champagne);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--gold-bright);
   line-height: 1;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
 }
 .about-float-label {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--white);
-  opacity: 0.85;
-  margin-top: 4px;
-}
-.about-float-stat {
-  position: absolute;
-  top: var(--space-8);
-  right: calc(-1 * var(--space-8));
-  background: var(--gold-champagne);
-  border-radius: var(--radius-md);
-  padding: var(--space-6);
-  text-align: center;
-  box-shadow: var(--shadow-xl);
-}
-.about-float-num {
-  display: block;
-  font-family: var(--font-serif);
-  font-size: var(--text-4xl);
-  font-weight: 600;
-  color: var(--navy-deep);
-  line-height: 1;
-}
-.about-float-label {
-  display: block;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--navy-deep);
-  opacity: 0.7;
-  margin-top: 4px;
+  color: #FFFFFF;
+  line-height: 1.35;
+  margin-top: 6px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 
 .about-content {
