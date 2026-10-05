@@ -1181,12 +1181,14 @@
     document.getElementById('blog-modal-body').innerHTML = article.content;
     blogModalEl.classList.add('open');
     document.body.style.overflow = 'hidden';
+    if (window._blogCarouselPause) window._blogCarouselPause();
   }
 
   function closeBlogModal() {
     if (blogModalEl) {
       blogModalEl.classList.remove('open');
       document.body.style.overflow = '';
+      if (window._blogCarouselResume) window._blogCarouselResume();
     }
   }
 
@@ -1520,12 +1522,12 @@
       }
     });
 
-    // Gentle Auto-Play (every 7 seconds)
+    // Automatic Continuous 3D Rotation (rotates every 3.5 seconds)
     function startAutoPlay() {
       stopAutoPlay();
       autoPlayTimer = setInterval(() => {
         nextSlide();
-      }, 7000);
+      }, 3500);
     }
 
     function stopAutoPlay() {
@@ -1540,8 +1542,26 @@
       startAutoPlay();
     }
 
+    // Expose lifecycle hooks for modal reader
+    window._blogCarouselPause = stopAutoPlay;
+    window._blogCarouselResume = startAutoPlay;
+
+    // Pause on hover, resume on mouse leave
     stage.addEventListener('mouseenter', stopAutoPlay);
-    stage.addEventListener('mouseleave', startAutoPlay);
+    stage.addEventListener('mouseleave', () => {
+      if (!blogModalEl || !blogModalEl.classList.contains('open')) {
+        startAutoPlay();
+      }
+    });
+
+    // Pause when browser tab is inactive, resume when tab becomes active
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopAutoPlay();
+      } else if (!blogModalEl || !blogModalEl.classList.contains('open')) {
+        startAutoPlay();
+      }
+    });
 
     // Window resize handler
     let resizeTimeout;
@@ -1550,7 +1570,7 @@
       resizeTimeout = setTimeout(updateCarousel, 120);
     }, { passive: true });
 
-    // Initial render
+    // Initial render and immediate auto-rotation start
     updateCarousel();
     startAutoPlay();
   }
