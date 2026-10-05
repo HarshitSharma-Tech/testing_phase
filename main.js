@@ -1005,4 +1005,145 @@
     }
   }, 3500);
 
+  // ——— BLOG / PERSPECTIVES MODAL READER ———
+  const blogArticles = {
+    'equity-volatility': {
+      tag: 'Wealth Strategy',
+      title: 'Navigating Equity Volatility: Fiduciary Wisdom for HNW Families',
+      meta: 'By Ashwin Karmarkar • October 2026 • 5 min read',
+      content: `
+        <p>In three decades of managing high-net-worth family capital in New Delhi, we have navigated through the 1992 Harshad Mehta fallout, the 2000 Dot-com crash, the 2008 Global Financial Crisis, and the 2020 pandemic dislocation. In every episode, the fundamental principle that preserved and compounded wealth remained identical: <strong>disciplined fiduciary asset allocation always triumphs over reactive emotion.</strong></p>
+        
+        <h3>The Mathematics of Calm: Rebalancing in Drawdowns</h3>
+        <p>When market turbulence arrives, retail investors often flee to cash at precisely the wrong moment, locking in nominal losses. Conversely, a structured wealth mandate uses mathematical rebalancing corridors. When equity weights compress due to market pullbacks, surplus liquidity from debt and arbitrage portfolios is systematically deployed into undervalued quality businesses.</p>
+        
+        <div class="blog-modal-takeaway">
+          <h4>Core Fiduciary Takeaway</h4>
+          <p>Volatility is not risk; permanent loss of capital through panic selling is. By maintaining a 3-year cash flow runway in fixed income, your long-term equity compounding remains untouched during market corrections.</p>
+        </div>
+
+        <h3>Three Actionable Rules for Family Offices</h3>
+        <ul>
+          <li><strong>Never confuse price with value:</strong> Quality businesses with high ROE and pricing power compound intrinsically regardless of short-term index gyrations.</li>
+          <li><strong>Staggered Deployments:</strong> Utilize STP (Systematic Transfer Plans) from liquid arbitrage into equity over 6–12 month phases.</li>
+          <li><strong>Whitelisted Manager Selection:</strong> Partner only with fund managers who have demonstrated multi-cycle downside protection rather than chasing 1-year momentum.</li>
+        </ul>
+      `
+    },
+    'family-trusts': {
+      tag: 'Estate & Legacy',
+      title: 'Structuring Private Family Trusts in India: A Multi-Generational Guide',
+      meta: 'By Vikram Chandra • September 2026 • 7 min read',
+      content: `
+        <p>India is currently witnessing the largest inter-generational wealth transfer in its economic history. Over the next decade, an estimated $1.3 trillion will pass from patriarchs and matriarchs who founded enterprises in the post-1991 liberalization era to their second and third generations.</p>
+        
+        <h3>Why a Simple Will Is No Longer Sufficient</h3>
+        <p>While a registered Will remains a cornerstone document, it carries significant vulnerabilities for substantial estates. In Indian jurisdictions, a Will often requires a lengthy court probate process (especially in presidential towns like Mumbai and Kolkata), during which assets can be frozen, public disputes can emerge, and liquidity can be severely constrained.</p>
+
+        <div class="blog-modal-takeaway">
+          <h4>The Power of an Irrevocable Discretionary Trust</h4>
+          <p>A Private Family Trust provides immediate continuity of asset management upon the settlor's demise without requiring probate. Assets ring-fenced inside an irrevocable trust are also insulated against future business liabilities and matrimonial disputes.</p>
+        </div>
+
+        <h3>Key Elements of a Robust Succession Blueprint</h3>
+        <ul>
+          <li><strong>Family Business Constitution:</strong> Defines voting rights, board succession rules, and dispute resolution mechanisms for operating businesses.</li>
+          <li><strong>Discretionary vs. Specific Trust Deeds:</strong> Customizing distribution covenants for education, healthcare, entrepreneurial ventures, and philanthropic goals.</li>
+          <li><strong>Independent Protector:</strong> Appointing a trusted professional advisor or institutional co-trustee to ensure fiduciary fidelity across generations.</li>
+        </ul>
+      `
+    },
+    'treasury-liquidity': {
+      tag: 'Treasury & Tax',
+      title: 'Tax Alpha & Arbitrage: Optimizing Corporate Treasury Liquidity',
+      meta: 'By Ashwin Karmarkar • August 2026 • 6 min read',
+      content: `
+        <p>For corporate founders, CXOs, and SME promoters across Delhi NCR, treasury management has historically meant parking operating surplus in conventional bank fixed deposits. However, with post-tax real yields often failing to outpace inflation, modern corporate treasuries demand sophisticated, tax-efficient liquidity governance.</p>
+
+        <h3>Beyond the Bank FD: The Tax Alpha Advantage</h3>
+        <p>Corporate tax rates on standard bank interest can erode up to 25%–35% of nominal earnings with zero indexation. By utilizing strategic arbitrage funds, liquid overnight mandates, and target maturity sovereign bond ladders, corporate treasuries can achieve superior post-tax net realization with daily or T+1 liquidity.</p>
+
+        <div class="blog-modal-takeaway">
+          <h4>Treasury Governance Rule</h4>
+          <p>Separate corporate surplus into distinct buckets: Operating Cash (0–3 months), Tactical Reserve (3–12 months), and Strategic Growth Surplus (>12 months). Match duration strictly with capital expenditure plans.</p>
+        </div>
+
+        <h3>Four Pillar Corporate Liquidity Framework</h3>
+        <ul>
+          <li><strong>Zero Credit Risk:</strong> Restricting deployment strictly to sovereign (G-Sec/SDL) and AAA-rated corporate debt instruments.</li>
+          <li><strong>Arbitrage Tax Efficiency:</strong> Leveraging equity-arbitrage taxation for surplus cash held between 3 to 12 months.</li>
+          <li><strong>Automated Sweep & Deployment:</strong> Eliminating idle current account balances through systematic daily sweeps.</li>
+        </ul>
+      `
+    }
+  };
+
+  function initBlogReader() {
+    let modal = document.getElementById('blog-article-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'blog-article-modal';
+      modal.className = 'blog-modal';
+      modal.innerHTML = `
+        <div class="blog-modal-container" role="dialog" aria-modal="true">
+          <button class="blog-modal-close" id="blog-modal-close" aria-label="Close article">&times;</button>
+          <div class="blog-modal-tag" id="blog-modal-tag"></div>
+          <h2 class="blog-modal-title" id="blog-modal-title"></h2>
+          <div class="blog-modal-meta" id="blog-modal-meta"></div>
+          <div class="blog-modal-body" id="blog-modal-body"></div>
+          <div class="blog-modal-cta">
+            <span style="color: #94A3B8; font-size: 0.85rem;">Discuss this advisory topic with our principals:</span>
+            <a href="contact.html" class="btn btn-primary btn-sm">Schedule Advisory Consultation &rarr;</a>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const closeBtn = document.getElementById('blog-modal-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          modal.classList.remove('open');
+          document.body.style.overflow = '';
+        });
+      }
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('open')) {
+          modal.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      });
+    }
+
+    document.querySelectorAll('[data-blog-id]').forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = card.getAttribute('data-blog-id');
+        const article = blogArticles[id];
+        if (article) {
+          document.getElementById('blog-modal-tag').textContent = article.tag;
+          document.getElementById('blog-modal-title').textContent = article.title;
+          document.getElementById('blog-modal-meta').textContent = article.meta;
+          document.getElementById('blog-modal-body').innerHTML = article.content;
+          modal.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    });
+  }
+
+  // Initialize blog reader on page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBlogReader);
+  } else {
+    initBlogReader();
+  }
+
 })();

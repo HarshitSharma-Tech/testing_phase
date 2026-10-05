@@ -14,17 +14,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: var(--space-8); margin-top: var(--space-12); }
-    .blog-card { background: var(--navy-surface); border: 1px solid var(--navy-border); border-radius: var(--radius-lg); overflow: hidden; transition: transform 0.3s ease, border-color 0.3s ease; }
-    .blog-card:hover { transform: translateY(-4px); border-color: var(--gold-champagne); }
-    .blog-card-img { width: 100%; height: 210px; object-fit: cover; }
-    .blog-card-body { padding: var(--space-6); }
-    .blog-tag { font-size: var(--text-xs); color: var(--gold-champagne); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
-    .blog-title { font-family: var(--font-serif); font-size: var(--text-2xl); color: var(--white); margin-bottom: 12px; line-height: 1.3; }
-    .blog-excerpt { font-size: var(--text-sm); color: var(--slate-text); line-height: 1.6; margin-bottom: 20px; }
-    .blog-date { font-size: var(--text-xs); color: var(--slate-muted); }
-  </style>
 </head>
 <body>
   <!-- ═══ TOP UTILITY BAR ═══ -->
@@ -98,55 +87,97 @@
     </div>
   </nav>
 
+  <!-- Mobile Drawer -->
+  <nav class="nav-drawer" id="nav-drawer" aria-hidden="true">
+    <a href="index.html" class="nav-drawer-link">Home</a>
+    <a href="services.html" class="nav-drawer-link">Services</a>
+    <a href="index.html#portfolio-studio" class="nav-drawer-link">Diagnostic Studio</a>
+    <a href="about.html" class="nav-drawer-link">About</a>
+    <a href="team.html" class="nav-drawer-link">Team</a>
+    <a href="blog.html" class="nav-drawer-link active">Blog &amp; Insights</a>
+    <a href="contact.html" class="nav-drawer-link">Contact</a>
+    <div class="nav-drawer-footer">
+      <a href="https://vintagefinvest.investwell.app/app/#/login" target="_blank" class="btn btn-outline btn-sm" style="width:100%; justify-content:center;">Investor Login</a>
+      <a href="contact.html" class="btn btn-primary btn-sm" style="width:100%; justify-content:center;">Request Consultation</a>
+    </div>
+  </nav>
+
   <!-- Page Hero -->
   <section class="page-hero">
     <div class="container page-hero-content">
-      <div class="section-label reveal">PERSPECTIVES & ANALYSIS</div>
-      <h1 class="page-hero-title reveal reveal-delay-1">Wealth Insights & <em>Strategic Perspectives</em></h1>
+      <div class="section-label reveal">PERSPECTIVES &amp; ANALYSIS</div>
+      <h1 class="page-hero-title reveal reveal-delay-1">Wealth Insights &amp; <em>Strategic Perspectives</em></h1>
       <p class="page-hero-sub reveal reveal-delay-2">Thoughtful financial commentary, tax optimization guides, and asset ring-fencing perspectives curated by Vintage Finvest senior partners.</p>
     </div>
   </section>
 
   <!-- Blog Content Grid -->
-  <section style="padding: var(--space-20) 0 var(--space-32);">
+  <section class="blog-section" style="padding-top: var(--space-16);">
     <div class="container">
       <div class="blog-grid">
-        <article class="blog-card reveal">
-          <picture>
-            <source srcset="assets/images/portfolio-analysis.webp" type="image/webp">
-            <img src="assets/images/portfolio-analysis.webp" alt="Equity Volatility Strategy" class="blog-card-img" loading="lazy">
-          </picture>
+        <article class="blog-card reveal" data-blog-id="equity-volatility">
+          <div class="blog-card-media">
+            <picture>
+              <source srcset="assets/images/portfolio-analysis.webp" type="image/webp">
+              <img src="assets/images/portfolio-analysis.webp" alt="Equity Volatility Strategy" class="blog-card-img" loading="lazy">
+            </picture>
+            <span class="blog-card-badge">Wealth Strategy</span>
+          </div>
           <div class="blog-card-body">
-            <div class="blog-tag">Wealth Strategy</div>
+            <div class="blog-meta-row">
+              <span>By Ashwin Karmarkar</span>
+              <span>5 min read</span>
+            </div>
             <h2 class="blog-title">Navigating Equity Volatility: Fiduciary Wisdom for HNW Families</h2>
             <p class="blog-excerpt">Why calm tactical rebalancing outperforms emotional noise during market cycles, and how asset allocation safeguards generational compounding.</p>
-            <div class="blog-date">October 2026 • 5 min read</div>
+            <div class="blog-card-footer">
+              <span class="blog-date">October 2026</span>
+              <span class="blog-read-link">Read Article &rarr;</span>
+            </div>
           </div>
         </article>
 
-        <article class="blog-card reveal reveal-delay-1">
-          <picture>
-            <source srcset="assets/images/estate-planning.webp" type="image/webp">
-            <img src="assets/images/estate-planning.webp" alt="Private Family Trusts India" class="blog-card-img" loading="lazy">
-          </picture>
+        <article class="blog-card reveal reveal-delay-1" data-blog-id="family-trusts">
+          <div class="blog-card-media">
+            <picture>
+              <source srcset="assets/images/estate-planning.webp" type="image/webp">
+              <img src="assets/images/estate-planning.webp" alt="Private Family Trusts India" class="blog-card-img" loading="lazy">
+            </picture>
+            <span class="blog-card-badge">Estate &amp; Legacy</span>
+          </div>
           <div class="blog-card-body">
-            <div class="blog-tag">Estate & Legacy</div>
+            <div class="blog-meta-row">
+              <span>By Vikram Chandra</span>
+              <span>7 min read</span>
+            </div>
             <h2 class="blog-title">Structuring Private Family Trusts in India: A Multi-Generational Guide</h2>
             <p class="blog-excerpt">Protecting Indian business dynasty assets against litigation, probate delays, and tax inefficiencies through institutional trust structures.</p>
-            <div class="blog-date">September 2026 • 7 min read</div>
+            <div class="blog-card-footer">
+              <span class="blog-date">September 2026</span>
+              <span class="blog-read-link">Read Article &rarr;</span>
+            </div>
           </div>
         </article>
 
-        <article class="blog-card reveal reveal-delay-2">
-          <picture>
-            <source srcset="assets/images/treasury-management.webp" type="image/webp">
-            <img src="assets/images/treasury-management.webp" alt="Corporate Treasury Liquidity" class="blog-card-img" loading="lazy">
-          </picture>
+        <article class="blog-card reveal reveal-delay-2" data-blog-id="treasury-liquidity">
+          <div class="blog-card-media">
+            <picture>
+              <source srcset="assets/images/treasury-management.webp" type="image/webp">
+              <img src="assets/images/treasury-management.webp" alt="Corporate Treasury Liquidity" class="blog-card-img" loading="lazy">
+            </picture>
+            <span class="blog-card-badge">Treasury &amp; Tax</span>
+          </div>
           <div class="blog-card-body">
-            <div class="blog-tag">Treasury & Tax</div>
-            <h2 class="blog-title">Tax Alpha & Arbitrage: Optimizing Corporate Treasury Liquidity</h2>
+            <div class="blog-meta-row">
+              <span>By Ashwin Karmarkar</span>
+              <span>6 min read</span>
+            </div>
+            <h2 class="blog-title">Tax Alpha &amp; Arbitrage: Optimizing Corporate Treasury Liquidity</h2>
             <p class="blog-excerpt">How CFOs and treasuries in Delhi NCR leverage sovereign bonds and arbitrage strategies to achieve T+1 liquidity with enhanced post-tax yields.</p>
-            <div class="blog-date">August 2026 • 6 min read</div>
+            <div class="blog-card-footer">
+              <span class="blog-date">August 2026</span>
+              <span class="blog-read-link">Read Article &rarr;</span>
+            </div>
           </div>
         </article>
       </div>
