@@ -523,14 +523,15 @@ ul, ol { list-style: none; }
 .nav-logo-text {
   display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   line-height: 1;
   text-decoration: none;
   transition: opacity var(--duration-fast);
 }
 .nav-logo-vintage {
   font-family: var(--font-serif);
-  font-size: 1.7rem;
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--gold-champagne);
@@ -540,18 +541,19 @@ ul, ol { list-style: none; }
   text-transform: uppercase;
   line-height: 0.92;
   display: block;
+  padding-left: 0.14em;
 }
 .nav-logo-sub {
   font-family: var(--font-sans);
   font-size: 0.58rem;
   font-weight: 600;
-  letter-spacing: 0.26em;
+  letter-spacing: 0.28em;
   color: rgba(255, 255, 255, 0.92);
   text-transform: uppercase;
   line-height: 1;
   margin-top: 4px;
   display: block;
-  padding-left: 2px;
+  padding-left: 0.28em;
 }
 body.page-light .nav-logo-text,
 .nav-logo-text.dark-text {
@@ -2722,18 +2724,19 @@ body.page-light .nav-logo-sub {
   text-transform: uppercase;
   line-height: 0.92;
   display: block;
+  padding-left: 0.14em;
 }
 .footer-logo .nav-logo-sub {
   font-family: var(--font-sans);
   font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.26em;
+  letter-spacing: 0.28em;
   color: rgba(255, 255, 255, 0.88);
   text-transform: uppercase;
   line-height: 1;
   margin-top: 5px;
   display: block;
-  padding-left: 2px;
+  padding-left: 0.28em;
 }
 .footer-tagline {
   font-size: var(--text-sm);
