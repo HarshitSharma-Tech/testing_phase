@@ -54,19 +54,20 @@
   --text-7xl:  4.5rem;
   --text-8xl:  6rem;
 
-  /* Spacing */
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-6:  1.5rem;
-  --space-8:  2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
-  --space-24: 6rem;
-  --space-32: 8rem;
+  /* Spacing - Harmonized for clean rhythm */
+  --space-1:  0.25rem;   /* 4px */
+  --space-2:  0.5rem;    /* 8px */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.125rem;  /* 18px */
+  --space-6:  1.25rem;   /* 20px */
+  --space-8:  1.75rem;   /* 28px */
+  --space-10: 2.25rem;   /* 36px */
+  --space-12: 2.75rem;   /* 44px */
+  --space-16: 3.25rem;   /* 52px */
+  --space-20: 3.75rem;   /* 60px */
+  --space-24: 4.5rem;    /* 72px */
+  --space-32: 5rem;      /* 80px */
 
   /* Shadows */
   --shadow-xs:  0 1px 3px rgba(0,0,0,0.08);
@@ -157,8 +158,8 @@ ul, ol { list-style: none; }
   margin: 0 auto;
   padding: 0 var(--space-6);
 }
-.section-pad { padding: var(--space-24) 0; }
-.section-pad-sm { padding: var(--space-16) 0; }
+.section-pad { padding: clamp(3rem, 4.5vw, 4.5rem) 0; }
+.section-pad-sm { padding: clamp(1.75rem, 3vw, 3rem) 0; }
 
 .flex          { display: flex; }
 .flex-col      { flex-direction: column; }
@@ -183,7 +184,7 @@ ul, ol { list-style: none; }
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--gold-champagne);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-3);
 }
 .section-label::before {
   content: '';
@@ -199,9 +200,9 @@ ul, ol { list-style: none; }
   width: 48px;
   height: 2px;
   background: linear-gradient(90deg, var(--gold-champagne), transparent);
-  margin: var(--space-6) 0;
+  margin: var(--space-3) 0;
 }
-.gold-line-center { margin: var(--space-6) auto; }
+.gold-line-center { margin: var(--space-3) auto; }
 
 /* ——— Buttons ——— */
 .btn {
@@ -501,7 +502,41 @@ ul, ol { list-style: none; }
   display: block;
 }
 .nav-logo-text {
-  display: none !important;
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: opacity var(--duration-fast);
+}
+.nav-logo-vintage {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 0.05em;
+}
+.nav-logo-sub {
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--gold-champagne);
+  text-transform: uppercase;
+}
+body.page-light .nav-logo-text,
+.nav-logo-text.dark-text {
+  color: var(--navy-deep);
+}
+body.page-light .nav-logo-vintage {
+  color: var(--navy-deep);
+}
+body.page-light .nav-logo-sub {
+  color: var(--gold-muted);
 }
 
 .nav-menu {
@@ -1135,11 +1170,11 @@ ul, ol { list-style: none; }
 }
 .section-header {
   max-width: 640px;
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-8);
 }
 .section-header.centered {
-  max-width: 580px;
-  margin: 0 auto var(--space-16);
+  max-width: 620px;
+  margin: 0 auto var(--space-8);
   text-align: center;
 }
 .section-header.centered .section-label { justify-content: center; }
@@ -1159,7 +1194,7 @@ ul, ol { list-style: none; }
 .services-light-theme {
   background: linear-gradient(180deg, #EAF0F6 0%, #F2F6FA 35%, #FAF7F2 75%, #F4EBE0 100%);
   color: #0B1928;
-  padding: var(--space-32) 0;
+  padding: clamp(3rem, 4.5vw, 4.75rem) 0;
   position: relative;
   border-top: 1.5px solid rgba(197, 164, 109, 0.4);
   border-bottom: 1.5px solid rgba(197, 164, 109, 0.4);
@@ -1364,7 +1399,8 @@ ul, ol { list-style: none; }
 .service-media-overlay-white {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(7, 16, 30, 0.5) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+  background: linear-gradient(to top, rgba(7, 16, 30, 0.3) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 .service-card-num-light {
@@ -2141,20 +2177,24 @@ ul, ol { list-style: none; }
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--navy-border);
 }
+.service-detail-media img,
 .service-detail-img {
   width: 100%;
   height: 380px;
   object-fit: cover;
+  object-position: center center;
   display: block;
   transition: transform var(--duration-slow) var(--ease-out);
 }
+.service-detail:hover .service-detail-media img,
 .service-detail:hover .service-detail-img {
   transform: scale(1.04);
 }
 .service-detail-media-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(7,16,30,0.85) 0%, rgba(7,16,30,0.1) 60%, transparent 100%);
+  background: linear-gradient(to top, rgba(7,16,30,0.35) 0%, rgba(7,16,30,0.02) 50%, transparent 100%);
+  pointer-events: none;
 }
 .service-num {
   position: absolute;
@@ -2244,13 +2284,13 @@ ul, ol { list-style: none; }
 /* ——— PROCESS / APPROACH SECTION ——— */
 .process-section {
   background: var(--navy-deep);
-  padding: var(--space-32) 0;
+  padding: clamp(3rem, 4.5vw, 4.5rem) 0;
 }
 .process-steps {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-1);
-  margin-top: var(--space-16);
+  margin-top: var(--space-6);
   position: relative;
 }
 .process-steps::before {
@@ -2310,7 +2350,7 @@ ul, ol { list-style: none; }
   background: linear-gradient(135deg, var(--navy-elevated) 0%, var(--navy-surface) 100%);
   border-top: 1px solid var(--navy-border);
   border-bottom: 1px solid var(--navy-border);
-  padding: var(--space-20) 0;
+  padding: clamp(1.75rem, 2.75vw, 2.75rem) 0;
 }
 .stats-grid {
   display: grid;
@@ -2319,7 +2359,7 @@ ul, ol { list-style: none; }
 }
 .stat-item {
   text-align: center;
-  padding: var(--space-8);
+  padding: var(--space-3) var(--space-5);
   border-right: 1px solid var(--navy-border);
 }
 .stat-item:last-child { border-right: none; }
@@ -2341,13 +2381,13 @@ ul, ol { list-style: none; }
 /* ——— TEAM SECTION ——— */
 .team-section {
   background: var(--navy-surface);
-  padding: var(--space-32) 0;
+  padding: clamp(3rem, 4.5vw, 4.75rem) 0;
 }
 .team-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-8);
-  margin-top: var(--space-16);
+  gap: var(--space-6);
+  margin-top: var(--space-6);
 }
 .team-card {
   background: var(--navy-elevated);
@@ -2363,7 +2403,7 @@ ul, ol { list-style: none; }
 }
 .team-card-media {
   position: relative;
-  height: 320px;
+  height: 275px;
   overflow: hidden;
   background: var(--navy-deep);
 }
@@ -2437,13 +2477,13 @@ ul, ol { list-style: none; }
 /* ——— TESTIMONIALS ——— */
 .testimonials-section {
   background: var(--navy-deep);
-  padding: var(--space-32) 0;
+  padding: clamp(3rem, 4.5vw, 4.75rem) 0;
 }
 .testimonials-slider {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-6);
-  margin-top: var(--space-16);
+  margin-top: var(--space-6);
 }
 .testimonial-card {
   background: var(--navy-elevated);
@@ -2518,7 +2558,7 @@ ul, ol { list-style: none; }
 .cta-section {
   background: linear-gradient(135deg, var(--navy-elevated) 0%, var(--navy-surface) 100%);
   border-top: 1px solid var(--navy-border);
-  padding: var(--space-24) 0;
+  padding: clamp(2.5rem, 4vw, 3.75rem) 0;
   position: relative;
   overflow: hidden;
 }
@@ -2645,7 +2685,24 @@ ul, ol { list-style: none; }
   display: block;
 }
 .footer-logo .nav-logo-text {
-  display: none !important;
+  font-family: var(--font-serif);
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.footer-logo .nav-logo-sub {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--gold-champagne);
+  text-transform: uppercase;
 }
 .footer-tagline {
   font-size: var(--text-sm);
@@ -3208,7 +3265,7 @@ ul, ol { list-style: none; }
   background: var(--navy-surface);
   border-top: 1px solid var(--navy-border);
   border-bottom: 1px solid var(--navy-border);
-  padding: var(--space-24) 0;
+  padding: clamp(3rem, 4.5vw, 4.5rem) 0;
   position: relative;
 }
 
