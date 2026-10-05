@@ -1011,7 +1011,7 @@
     }
   }, 3500);
 
-  // ——— BLOG / PERSPECTIVES MODAL READER ———
+  // ——— BLOG / PERSPECTIVES ARTICLES DATASET ———
   const blogArticles = {
     'equity-volatility': {
       tag: 'Wealth Strategy',
@@ -1059,8 +1059,31 @@
         </ul>
       `
     },
+    'tax-alpha': {
+      tag: 'Tax Alpha',
+      title: 'Capital Gains Harvesting & Section 54 Planning for High-Growth Dynasties',
+      meta: 'By Vineet Bhasin • August 2026 • 6 min read',
+      content: `
+        <p>Tax drag is the silent compounder of wealth erosion. For promoter families executing large-scale stake sales, real estate monetization, or equity vesting events, tax structuring is not an afterthought—it is an integral part of asset management.</p>
+
+        <h3>Optimizing Capital Gains Under Modern Slabs</h3>
+        <p>With amendments to long-term capital gains tax rates and indexation provisions, families require proactive tax alpha harvesting. Strategically offsetting long-term gains against available capital loss carry-forwards, structuring Section 54 and 54EC exemption pipelines, and stagger-gifting across distinct family HUFs can preserve up to 15%–20% of net liquidity.</p>
+
+        <div class="blog-modal-takeaway">
+          <h4>Tax Alpha Principle</h4>
+          <p>Gross returns create vanity; net-of-tax, inflation-adjusted post-distribution yield is the only reality that builds enduring family wealth.</p>
+        </div>
+
+        <h3>Strategic Pillars of Section 54 Governance</h3>
+        <ul>
+          <li><strong>Pre-Sale Planning Horizon:</strong> Initiating tax modeling at least 6 months prior to transaction execution.</li>
+          <li><strong>Capital Gain Account Schemes (CGAS):</strong> Timely escrow utilization before the filing deadline to protect roll-over validity.</li>
+          <li><strong>HUF Optimization:</strong> Leveraging Hindu Undivided Family accounts for tax-efficient multi-entity balance sheet distribution.</li>
+        </ul>
+      `
+    },
     'treasury-liquidity': {
-      tag: 'Treasury & Tax',
+      tag: 'Treasury & Cash Flow',
       title: 'Tax Alpha & Arbitrage: Optimizing Corporate Treasury Liquidity',
       meta: 'By Ashwin Karmarkar • August 2026 • 6 min read',
       content: `
@@ -1081,75 +1104,464 @@
           <li><strong>Automated Sweep & Deployment:</strong> Eliminating idle current account balances through systematic daily sweeps.</li>
         </ul>
       `
+    },
+    'philanthropy-endowments': {
+      tag: 'Philanthropy & Impact',
+      title: 'Next-Gen Philanthropy: Structuring Endowments with ESG Governance',
+      meta: 'By Raghav Singhania • July 2026 • 5 min read',
+      content: `
+        <p>Modern Indian wealth creators are increasingly looking beyond traditional transactional charity. The emerging generation of family enterprise leaders seeks to create perpetual philanthropic endowments with measurable societal return, fiduciary accountability, and ESG alignment.</p>
+
+        <h3>Transitioning from Ad-Hoc Giving to Structured Endowments</h3>
+        <p>Setting up dedicated Section 8 foundation entities or public charitable trusts with institutional investment policies ensures that corpus capital generates continuous compounding income while granting targeted disbursements to vetted impact initiatives.</p>
+
+        <div class="blog-modal-takeaway">
+          <h4>Legacy of Impact</h4>
+          <p>A well-governed family foundation unites multi-generational family members around shared human values, preparing the next generation for broader fiduciary responsibility.</p>
+        </div>
+
+        <h3>Key Steps in Endowment Setup</h3>
+        <ul>
+          <li><strong>Investment Policy Statement (IPS):</strong> Defining capital preservation constraints and approved sustainable asset classes for foundation corpus.</li>
+          <li><strong>Impact KPI Audits:</strong> Implementing milestone-based grant distribution to ensure tangible on-ground outcomes.</li>
+          <li><strong>Section 80G & 12A Compliance:</strong> Maintaining seamless tax exemption status and regulatory filings.</li>
+        </ul>
+      `
     }
   };
 
-  function initBlogReader() {
-    let modal = document.getElementById('blog-article-modal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'blog-article-modal';
-      modal.className = 'blog-modal';
-      modal.innerHTML = `
-        <div class="blog-modal-container" role="dialog" aria-modal="true">
-          <button class="blog-modal-close" id="blog-modal-close" aria-label="Close article">&times;</button>
-          <div class="blog-modal-tag" id="blog-modal-tag"></div>
-          <h2 class="blog-modal-title" id="blog-modal-title"></h2>
-          <div class="blog-modal-meta" id="blog-modal-meta"></div>
-          <div class="blog-modal-body" id="blog-modal-body"></div>
-          <div class="blog-modal-cta">
-            <span style="color: #94A3B8; font-size: 0.85rem;">Discuss this advisory topic with our principals:</span>
-            <a href="contact.html" class="btn btn-primary btn-sm">Schedule Advisory Consultation &rarr;</a>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
+  // ——— BLOG MODAL READER ———
+  let blogModalEl = null;
 
-      const closeBtn = document.getElementById('blog-modal-close');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          modal.classList.remove('open');
-          document.body.style.overflow = '';
+  function openBlogModal(articleId) {
+    const article = blogArticles[articleId];
+    if (!article) return;
+
+    if (!blogModalEl) {
+      blogModalEl = document.getElementById('blog-article-modal');
+      if (!blogModalEl) {
+        blogModalEl = document.createElement('div');
+        blogModalEl.id = 'blog-article-modal';
+        blogModalEl.className = 'blog-modal';
+        blogModalEl.innerHTML = `
+          <div class="blog-modal-container" role="dialog" aria-modal="true">
+            <button class="blog-modal-close" id="blog-modal-close" aria-label="Close article">&times;</button>
+            <div class="blog-modal-tag" id="blog-modal-tag"></div>
+            <h2 class="blog-modal-title" id="blog-modal-title"></h2>
+            <div class="blog-modal-meta" id="blog-modal-meta"></div>
+            <div class="blog-modal-body" id="blog-modal-body"></div>
+            <div class="blog-modal-cta">
+              <span style="color: #94A3B8; font-size: 0.85rem;">Discuss this advisory topic with our principals:</span>
+              <a href="contact.html" class="btn btn-primary btn-sm">Schedule Advisory Consultation &rarr;</a>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(blogModalEl);
+
+        const closeBtn = blogModalEl.querySelector('#blog-modal-close');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', closeBlogModal);
+        }
+
+        blogModalEl.addEventListener('click', (e) => {
+          if (e.target === blogModalEl) closeBlogModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && blogModalEl.classList.contains('open')) {
+            closeBlogModal();
+          }
+        });
+      }
+    }
+
+    document.getElementById('blog-modal-tag').textContent = article.tag;
+    document.getElementById('blog-modal-title').textContent = article.title;
+    document.getElementById('blog-modal-meta').textContent = article.meta;
+    document.getElementById('blog-modal-body').innerHTML = article.content;
+    blogModalEl.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeBlogModal() {
+    if (blogModalEl) {
+      blogModalEl.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // ——— 3D CURVED PERSPECTIVE BLOG CAROUSEL ———
+  function initBlog3DCarousel() {
+    const stage = document.getElementById('blog-carousel-stage');
+    const track = document.getElementById('blog-carousel-track');
+    if (!stage || !track) return;
+
+    const cards = Array.from(track.querySelectorAll('.blog-card-3d'));
+    if (!cards.length) return;
+
+    const prevBtn = document.getElementById('blog-prev-btn');
+    const nextBtn = document.getElementById('blog-next-btn');
+    const stagePrevBtn = document.getElementById('blog-stage-prev');
+    const stageNextBtn = document.getElementById('blog-stage-next');
+    const dotsContainer = document.getElementById('blog-dots-container');
+    const tickerCount = document.getElementById('blog-ticker-count');
+    const tickerTitle = document.getElementById('blog-ticker-title');
+
+    const N = cards.length;
+    let activeIndex = 0;
+    let autoPlayTimer = null;
+    let isDragging = false;
+    let startX = 0;
+    let currentDragX = 0;
+    let dragOffset = 0;
+    let hasDragged = false;
+
+    // Render pagination dots
+    if (dotsContainer) {
+      dotsContainer.innerHTML = '';
+      for (let i = 0; i < N; i++) {
+        const dot = document.createElement('button');
+        dot.className = `blog-dot ${i === activeIndex ? 'active' : ''}`;
+        dot.setAttribute('aria-label', `Go to article ${i + 1} of ${N}`);
+        dot.addEventListener('click', () => {
+          goToIndex(i);
+          resetAutoPlay();
+        });
+        dotsContainer.appendChild(dot);
+      }
+    }
+
+    function updateCarousel() {
+      const vw = window.innerWidth;
+      const isMobile = vw < 768;
+      const isTablet = vw >= 768 && vw < 1024;
+
+      // Update dots
+      if (dotsContainer) {
+        const dots = dotsContainer.querySelectorAll('.blog-dot');
+        dots.forEach((dot, idx) => {
+          dot.classList.toggle('active', idx === activeIndex);
+          dot.setAttribute('aria-current', idx === activeIndex ? 'true' : 'false');
         });
       }
 
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.classList.remove('open');
-          document.body.style.overflow = '';
+      // Update Ticker Bar
+      if (tickerCount) {
+        tickerCount.textContent = `0${activeIndex + 1} / 0${N}`;
+      }
+      if (tickerTitle && cards[activeIndex]) {
+        const activeTitleEl = cards[activeIndex].querySelector('.blog-card-title-3d');
+        if (activeTitleEl) {
+          tickerTitle.textContent = activeTitleEl.textContent;
         }
-      });
+      }
 
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('open')) {
-          modal.classList.remove('open');
-          document.body.style.overflow = '';
+      // Calculate clean, non-overlapping horizontal spacing with 3D perspective
+      cards.forEach((card, idx) => {
+        let offset = ((idx - activeIndex) % N);
+        if (offset > N / 2) offset -= N;
+        if (offset < -N / 2) offset += N;
+
+        const isCenter = offset === 0;
+        card.classList.toggle('active', isCenter);
+        card.classList.toggle('side-left', offset < 0);
+        card.classList.toggle('side-right', offset > 0);
+        card.setAttribute('aria-hidden', isCenter ? 'false' : 'true');
+        card.tabIndex = isCenter ? 0 : -1;
+
+        let tx = 0;
+        let tz = 0;
+        let rotY = 0;
+        let scale = 1;
+        let opacity = 1;
+        let zIndex = 10;
+        let pointerEvents = 'auto';
+
+        if (isMobile) {
+          // Mobile: Center card prominent + partial non-overlapping side hints
+          if (offset === 0) {
+            tx = 0;
+            tz = 20;
+            rotY = 0;
+            scale = 1;
+            opacity = 1;
+            zIndex = 20;
+          } else if (offset === -1) {
+            tx = -310;
+            tz = -30;
+            rotY = 12;
+            scale = 0.88;
+            opacity = 0.70;
+            zIndex = 14;
+          } else if (offset === 1) {
+            tx = 310;
+            tz = -30;
+            rotY = -12;
+            scale = 0.88;
+            opacity = 0.70;
+            zIndex = 14;
+          } else {
+            tx = offset * 500;
+            opacity = 0;
+            zIndex = 5;
+            pointerEvents = 'none';
+          }
+        } else if (isTablet) {
+          // Tablet: Clean 3-card non-overlapping perspective
+          if (offset === 0) {
+            tx = 0;
+            tz = 50;
+            rotY = 0;
+            scale = 1.03;
+            opacity = 1;
+            zIndex = 20;
+          } else if (offset === -1) {
+            tx = -330;
+            tz = -20;
+            rotY = 16;
+            scale = 0.90;
+            opacity = 0.92;
+            zIndex = 15;
+          } else if (offset === 1) {
+            tx = 330;
+            tz = -20;
+            rotY = -16;
+            scale = 0.90;
+            opacity = 0.92;
+            zIndex = 15;
+          } else {
+            tx = offset * 580;
+            opacity = 0;
+            zIndex = 8;
+            pointerEvents = 'none';
+          }
+        } else {
+          // Desktop / Widescreen: Generous spacing ensuring ZERO card overlap
+          const stepX = vw >= 1440 ? 390 : (vw >= 1200 ? 360 : 330);
+          
+          if (offset === 0) {
+            tx = 0;
+            tz = 60;
+            rotY = 0;
+            scale = 1.05;
+            opacity = 1;
+            zIndex = 25;
+          } else if (offset === -1) {
+            tx = -stepX;
+            tz = -20;
+            rotY = 18;
+            scale = 0.92;
+            opacity = 0.94;
+            zIndex = 18;
+          } else if (offset === 1) {
+            tx = stepX;
+            tz = -20;
+            rotY = -18;
+            scale = 0.92;
+            opacity = 0.94;
+            zIndex = 18;
+          } else if (offset === -2) {
+            tx = -stepX * 1.95;
+            tz = -85;
+            rotY = 32;
+            scale = 0.82;
+            opacity = 0.80;
+            zIndex = 12;
+          } else if (offset === 2) {
+            tx = stepX * 1.95;
+            tz = -85;
+            rotY = -32;
+            scale = 0.82;
+            opacity = 0.80;
+            zIndex = 12;
+          } else {
+            tx = offset * stepX * 1.5;
+            opacity = 0;
+            zIndex = 2;
+            pointerEvents = 'none';
+          }
         }
+
+        card.style.transform = `translate3d(calc(-50% + ${tx.toFixed(1)}px), -50%, ${tz.toFixed(1)}px) rotateY(${rotY.toFixed(1)}deg) scale(${scale.toFixed(2)})`;
+        card.style.opacity = opacity;
+        card.style.zIndex = zIndex;
+        card.style.pointerEvents = pointerEvents;
       });
     }
 
-    document.querySelectorAll('[data-blog-id]').forEach(card => {
-      card.addEventListener('click', (e) => {
+    function goToIndex(newIndex) {
+      activeIndex = (newIndex % N + N) % N;
+      updateCarousel();
+    }
+
+    function nextSlide() {
+      goToIndex(activeIndex + 1);
+    }
+
+    function prevSlide() {
+      goToIndex(activeIndex - 1);
+    }
+
+    // Header Controls
+    if (prevBtn) {
+      prevBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        const id = card.getAttribute('data-blog-id');
-        const article = blogArticles[id];
-        if (article) {
-          document.getElementById('blog-modal-tag').textContent = article.tag;
-          document.getElementById('blog-modal-title').textContent = article.title;
-          document.getElementById('blog-modal-meta').textContent = article.meta;
-          document.getElementById('blog-modal-body').innerHTML = article.content;
-          modal.classList.add('open');
-          document.body.style.overflow = 'hidden';
+        prevSlide();
+        resetAutoPlay();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        nextSlide();
+        resetAutoPlay();
+      });
+    }
+
+    // Stage Floating Controls
+    if (stagePrevBtn) {
+      stagePrevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        prevSlide();
+        resetAutoPlay();
+      });
+    }
+
+    if (stageNextBtn) {
+      stageNextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        nextSlide();
+        resetAutoPlay();
+      });
+    }
+
+    // Card click behavior: if inactive card clicked -> rotate to center; if active card clicked -> open article modal
+    cards.forEach((card, idx) => {
+      card.addEventListener('click', (e) => {
+        if (hasDragged) return; // ignore click if drag occurred
+
+        const blogId = card.getAttribute('data-blog-id');
+        if (idx !== activeIndex) {
+          e.preventDefault();
+          goToIndex(idx);
+          resetAutoPlay();
+        } else {
+          // Active focal card clicked or CTA clicked
+          if (blogId) {
+            openBlogModal(blogId);
+          }
         }
       });
     });
+
+    // Touch & Pointer Drag Gestures
+    function onPointerDown(e) {
+      if (e.target.closest('.blog-stage-arrow') || e.target.closest('.blog-nav-btn')) return;
+      isDragging = true;
+      hasDragged = false;
+      startX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+      currentDragX = startX;
+      dragOffset = 0;
+      stage.classList.add('is-dragging');
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      currentDragX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+      dragOffset = currentDragX - startX;
+      if (Math.abs(dragOffset) > 8) {
+        hasDragged = true;
+      }
+    }
+
+    function onPointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      stage.classList.remove('is-dragging');
+
+      if (Math.abs(dragOffset) > 40) {
+        if (dragOffset > 0) {
+          prevSlide();
+        } else {
+          nextSlide();
+        }
+        resetAutoPlay();
+      }
+
+      setTimeout(() => {
+        hasDragged = false;
+      }, 50);
+    }
+
+    // Mouse drag listeners
+    stage.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+
+    // Touch swipe listeners
+    stage.addEventListener('touchstart', onPointerDown, { passive: true });
+    window.addEventListener('touchmove', onPointerMove, { passive: true });
+    window.addEventListener('touchend', onPointerUp, { passive: true });
+
+    // Keyboard navigation
+    stage.setAttribute('tabindex', '0');
+    stage.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+        resetAutoPlay();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextSlide();
+        resetAutoPlay();
+      }
+    });
+
+    // Gentle Auto-Play (every 7 seconds)
+    function startAutoPlay() {
+      stopAutoPlay();
+      autoPlayTimer = setInterval(() => {
+        nextSlide();
+      }, 7000);
+    }
+
+    function stopAutoPlay() {
+      if (autoPlayTimer) {
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = null;
+      }
+    }
+
+    function resetAutoPlay() {
+      stopAutoPlay();
+      startAutoPlay();
+    }
+
+    stage.addEventListener('mouseenter', stopAutoPlay);
+    stage.addEventListener('mouseleave', startAutoPlay);
+
+    // Window resize handler
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(updateCarousel, 120);
+    }, { passive: true });
+
+    // Initial render
+    updateCarousel();
+    startAutoPlay();
   }
 
-  // Initialize blog reader on page load
+  // ——— BOOTSTRAP INITIALIZATION ———
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initBlogReader);
+    document.addEventListener('DOMContentLoaded', () => {
+      initBlog3DCarousel();
+    });
   } else {
-    initBlogReader();
+    initBlog3DCarousel();
   }
 
 })();
