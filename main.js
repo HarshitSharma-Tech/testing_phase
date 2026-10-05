@@ -69,11 +69,12 @@
     var tabVisible  = !document.hidden;
 
     var GOLDS = [
-      '255, 235, 158',
-      '255, 213, 105',
-      '244, 192,  85',
-      '255, 246, 200',
-      '216, 167,  70',
+      '255, 198, 20',   // Radiant 24K Gold
+      '245, 178, 25',   // Rich Amber Gold
+      '255, 215, 60',   // Bright Solar Gold
+      '220, 165, 30',   // Deep Antique Gold
+      '255, 190, 40',   // Warm Champagne Gold
+      '235, 160, 15',   // Burnished Gold
     ];
 
     var isMobile = window.innerWidth < 768;
@@ -96,17 +97,17 @@
       var xNorm = Math.pow(Math.random(), 1.6);
       var x = xNorm * W * 0.62 + (Math.random() - 0.5) * 60;
       var y = prefill ? -10 + Math.random() * (H + 10) : -(8 + Math.random() * 80);
-      var sz = 1.1 + Math.random() * 2.6;
+      var sz = (1.1 + Math.random() * 2.6) * 1.15;
       return {
         x: x, y: y, sz: sz,
-        vx: (Math.random() - 0.35) * 0.55,
-        vy: 0.75 + Math.random() * 1.55,
+        vx: (Math.random() - 0.35) * 0.27,
+        vy: (0.75 + Math.random() * 1.55) * 0.49,
         rot : Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.042,
+        rotV: (Math.random() - 0.5) * 0.020,
         swA : 0.12 + Math.random() * 0.40,
-        swF : 0.011 + Math.random() * 0.021,
+        swF : (0.011 + Math.random() * 0.021) * 0.52,
         swP : Math.random() * Math.PI * 2,
-        a   : 0.32 + Math.random() * 0.44,
+        a   : 0.65 + Math.random() * 0.35,
         twF : 0.016 + Math.random() * 0.034,
         twP : Math.random() * Math.PI * 2,
         col : GOLDS[Math.floor(Math.random() * GOLDS.length)],
@@ -116,18 +117,18 @@
 
     // ── Click crystal: coords are relative to hero rect ───────
     function mkClick(cx, cy) {
-      var sz   = 1.8 + Math.random() * 2.2;
-      var life = 90 + Math.floor(Math.random() * 60);
+      var sz   = (1.8 + Math.random() * 2.2) * 1.15;
+      var life = 180 + Math.floor(Math.random() * 120);
       return {
         x: cx, y: cy, sz: sz,
-        vx: (Math.random() - 0.5) * 0.6,
-        vy: 0.4 + Math.random() * 0.6,
+        vx: (Math.random() - 0.5) * 0.29,
+        vy: (0.4 + Math.random() * 0.6) * 0.49,
         rot : Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.04,
+        rotV: (Math.random() - 0.5) * 0.020,
         swA : 0.1 + Math.random() * 0.3,
-        swF : 0.01 + Math.random() * 0.02,
+        swF : (0.01 + Math.random() * 0.02) * 0.52,
         swP : Math.random() * Math.PI * 2,
-        a   : 0.82 + Math.random() * 0.16,
+        a   : 0.95 + Math.random() * 0.05,
         life: life, maxL: life,
         col : GOLDS[Math.floor(Math.random() * GOLDS.length)],
         typ : Math.random() < 0.38 ? 0 : (Math.random() < 0.52 ? 1 : 2),
@@ -136,49 +137,54 @@
 
     // ── Draw helpers ──────────────────────────────────────────
     function dDiamond(x, y, sz, rot, a, col) {
-      ctx.save(); ctx.globalAlpha = a;
+      ctx.save(); ctx.globalAlpha = Math.min(1, a * 1.1);
       ctx.translate(x, y); ctx.rotate(rot);
       var w = sz, h = sz * 1.82;
-      ctx.shadowColor = 'rgba(' + col + ',0.50)'; ctx.shadowBlur = sz * 2.6;
+      ctx.shadowColor = 'rgba(' + col + ',0.95)'; ctx.shadowBlur = sz * 4.2;
       ctx.beginPath();
       ctx.moveTo(0,-h); ctx.lineTo(w,-h*0.17); ctx.lineTo(w*0.56,h*0.70);
       ctx.lineTo(0,h); ctx.lineTo(-w*0.56,h*0.70); ctx.lineTo(-w,-h*0.17);
       ctx.closePath();
       var g = ctx.createLinearGradient(-w,-h,w,h);
-      g.addColorStop(0,    'rgba(255,252,245,' + a + ')');
-      g.addColorStop(0.42, 'rgba(' + col + ',' + (a*0.87) + ')');
-      g.addColorStop(1,    'rgba(' + col + ',' + (a*0.63) + ')');
+      g.addColorStop(0,    'rgba(255,255,220,' + a + ')');
+      g.addColorStop(0.35, 'rgba(' + col + ',' + a + ')');
+      g.addColorStop(1,    'rgba(200,140,20,' + (a*0.85) + ')');
       ctx.fillStyle = g; ctx.fill();
-      ctx.lineWidth = 0.40; ctx.strokeStyle = 'rgba(255,255,255,' + (a*0.55) + ')';
+      ctx.lineWidth = 0.60; ctx.strokeStyle = 'rgba(255,245,160,' + (a*0.95) + ')';
       ctx.beginPath(); ctx.moveTo(0,-h); ctx.lineTo(0,h);
       ctx.moveTo(-w,-h*0.17); ctx.lineTo(w,-h*0.17); ctx.stroke();
-      ctx.shadowBlur = sz*0.7; ctx.beginPath();
-      ctx.arc(w*0.16,-h*0.40,sz*0.20,0,Math.PI*2);
-      ctx.fillStyle = 'rgba(255,255,255,' + (a*0.82) + ')'; ctx.fill();
+      ctx.shadowBlur = sz*1.5; ctx.beginPath();
+      ctx.arc(w*0.16,-h*0.40,sz*0.24,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,240,' + Math.min(1, a * 1.15) + ')'; ctx.fill();
       ctx.restore();
     }
     function dStar(x, y, sz, rot, a, col) {
-      ctx.save(); ctx.globalAlpha = a;
+      ctx.save(); ctx.globalAlpha = Math.min(1, a * 1.1);
       ctx.translate(x, y); ctx.rotate(rot);
-      ctx.shadowColor = 'rgba(' + col + ',0.60)'; ctx.shadowBlur = sz*3.0;
+      ctx.shadowColor = 'rgba(' + col + ',0.98)'; ctx.shadowBlur = sz*4.8;
       var arm = sz*1.9, hw = sz*0.24;
       ctx.beginPath(); ctx.moveTo(0,-arm);
       ctx.quadraticCurveTo(hw,-hw,arm,0); ctx.quadraticCurveTo(hw,hw,0,arm);
       ctx.quadraticCurveTo(-hw,hw,-arm,0); ctx.quadraticCurveTo(-hw,-hw,0,-arm);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(' + col + ',' + a + ')'; ctx.fill();
-      ctx.shadowBlur = sz*0.6; ctx.beginPath();
+      var sg = ctx.createRadialGradient(0,0,0,0,0,arm);
+      sg.addColorStop(0, 'rgba(255,255,230,' + a + ')');
+      sg.addColorStop(0.42, 'rgba(' + col + ',' + a + ')');
+      sg.addColorStop(1, 'rgba(190,130,20,' + (a*0.80) + ')');
+      ctx.fillStyle = sg; ctx.fill();
+      ctx.shadowBlur = sz*1.3; ctx.beginPath();
       ctx.arc(0,0,sz*0.38,0,Math.PI*2);
-      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1,a*1.2) + ')'; ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,245,' + Math.min(1,a*1.25) + ')'; ctx.fill();
       ctx.restore();
     }
     function dGem(x, y, sz, a, col) {
-      ctx.save(); ctx.globalAlpha = a;
-      ctx.shadowColor = 'rgba(' + col + ',0.50)'; ctx.shadowBlur = sz*2.0;
+      ctx.save(); ctx.globalAlpha = Math.min(1, a * 1.1);
+      ctx.shadowColor = 'rgba(' + col + ',0.95)'; ctx.shadowBlur = sz*3.8;
       ctx.beginPath(); ctx.arc(x,y,sz*0.85,0,Math.PI*2);
       var g = ctx.createRadialGradient(x-sz*0.26,y-sz*0.26,sz*0.04,x,y,sz*0.85);
-      g.addColorStop(0,'rgba(255,255,240,' + a + ')');
-      g.addColorStop(1,'rgba(' + col + ',' + (a*0.52) + ')');
+      g.addColorStop(0,'rgba(255,255,230,' + a + ')');
+      g.addColorStop(0.45,'rgba(' + col + ',' + a + ')');
+      g.addColorStop(1,'rgba(180,120,15,' + (a*0.80) + ')');
       ctx.fillStyle = g; ctx.fill(); ctx.restore();
     }
     function drawP(p, a) {
