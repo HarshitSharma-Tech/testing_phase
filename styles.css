@@ -521,31 +521,37 @@ ul, ol { list-style: none; }
   display: block;
 }
 .nav-logo-text {
-  font-family: var(--font-serif);
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--white);
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.35rem;
+  flex-direction: column;
+  align-items: flex-start;
   line-height: 1;
-  text-transform: uppercase;
+  text-decoration: none;
   transition: opacity var(--duration-fast);
 }
 .nav-logo-vintage {
   font-family: var(--font-serif);
+  font-size: 1.7rem;
   font-weight: 700;
-  color: var(--white);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.14em;
+  color: var(--gold-champagne);
+  background: linear-gradient(135deg, #FFF2D6 0%, #D8B24A 50%, #B88E28 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  line-height: 0.92;
+  display: block;
 }
 .nav-logo-sub {
   font-family: var(--font-sans);
-  font-size: 0.76rem;
+  font-size: 0.58rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--gold-champagne);
+  letter-spacing: 0.26em;
+  color: rgba(255, 255, 255, 0.92);
   text-transform: uppercase;
+  line-height: 1;
+  margin-top: 4px;
+  display: block;
+  padding-left: 2px;
 }
 body.page-light .nav-logo-text,
 .nav-logo-text.dark-text {
@@ -553,6 +559,9 @@ body.page-light .nav-logo-text,
 }
 body.page-light .nav-logo-vintage {
   color: var(--navy-deep);
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: var(--navy-deep);
 }
 body.page-light .nav-logo-sub {
   color: var(--gold-muted);
@@ -2696,24 +2705,35 @@ body.page-light .nav-logo-sub {
   display: block;
 }
 .footer-logo .nav-logo-text {
-  font-family: var(--font-serif);
-  font-size: 1.55rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--white);
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.35rem;
+  flex-direction: column;
+  align-items: flex-start;
   line-height: 1;
+}
+.footer-logo .nav-logo-vintage {
+  font-family: var(--font-serif);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--gold-champagne);
+  background: linear-gradient(135deg, #FFF2D6 0%, #D8B24A 50%, #B88E28 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-transform: uppercase;
+  line-height: 0.92;
+  display: block;
 }
 .footer-logo .nav-logo-sub {
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--gold-champagne);
+  letter-spacing: 0.26em;
+  color: rgba(255, 255, 255, 0.88);
   text-transform: uppercase;
+  line-height: 1;
+  margin-top: 5px;
+  display: block;
+  padding-left: 2px;
 }
 .footer-tagline {
   font-size: var(--text-sm);
