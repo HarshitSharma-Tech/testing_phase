@@ -2544,6 +2544,33 @@ body.page-light .nav-logo-sub {
   margin-bottom: 18px;
   flex-grow: 1;
 }
+.team-role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-champagne);
+  margin-bottom: 8px;
+}
+.team-bio {
+  font-size: 0.875rem;
+  color: #94A3B8;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  flex-grow: 1;
+}
+.team-actions {
+  display: flex;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: auto;
+}
+.team-actions .btn {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+}
 .team-card-actions {
   display: flex;
   align-items: center;
