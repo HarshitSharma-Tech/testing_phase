@@ -97,15 +97,15 @@
       var xNorm = Math.pow(Math.random(), 1.6);
       var x = xNorm * W * 0.62 + (Math.random() - 0.5) * 60;
       var y = prefill ? -10 + Math.random() * (H + 10) : -(8 + Math.random() * 80);
-      var sz = (1.1 + Math.random() * 2.6) * 1.15;
+      var sz = (1.1 + Math.random() * 2.6) * 1.15 * 0.80; // Decreased size by 20%
       return {
         x: x, y: y, sz: sz,
-        vx: (Math.random() - 0.35) * 0.16,
-        vy: (0.75 + Math.random() * 1.55) * 0.294,
+        vx: (Math.random() - 0.35) * 0.16 * 0.70, // Reduced speed by 30%
+        vy: (0.75 + Math.random() * 1.55) * 0.294 * 0.70, // Reduced speed by 30%
         rot : Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.012,
+        rotV: (Math.random() - 0.5) * 0.012 * 0.70,
         swA : 0.12 + Math.random() * 0.40,
-        swF : (0.011 + Math.random() * 0.021) * 0.31,
+        swF : (0.011 + Math.random() * 0.021) * 0.31 * 0.70,
         swP : Math.random() * Math.PI * 2,
         a   : 0.65 + Math.random() * 0.35,
         twF : 0.016 + Math.random() * 0.034,
@@ -117,16 +117,16 @@
 
     // ── Click crystal: coords are relative to hero rect ───────
     function mkClick(cx, cy) {
-      var sz   = (1.8 + Math.random() * 2.2) * 1.15;
+      var sz   = (1.8 + Math.random() * 2.2) * 1.15 * 0.80; // Decreased size by 20%
       var life = 260 + Math.floor(Math.random() * 160);
       return {
         x: cx, y: cy, sz: sz,
-        vx: (Math.random() - 0.5) * 0.17,
-        vy: (0.4 + Math.random() * 0.6) * 0.294,
+        vx: (Math.random() - 0.5) * 0.17 * 0.70, // Reduced speed by 30%
+        vy: (0.4 + Math.random() * 0.6) * 0.294 * 0.70, // Reduced speed by 30%
         rot : Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.012,
+        rotV: (Math.random() - 0.5) * 0.012 * 0.70,
         swA : 0.1 + Math.random() * 0.3,
-        swF : (0.01 + Math.random() * 0.02) * 0.31,
+        swF : (0.01 + Math.random() * 0.02) * 0.31 * 0.70,
         swP : Math.random() * Math.PI * 2,
         a   : 0.95 + Math.random() * 0.05,
         life: life, maxL: life,
@@ -392,9 +392,20 @@
     }, { passive: true });
   }
 
-  // ——— VIDEO FALLBACK for prefers-reduced-motion ———
+  // ——— HERO VIDEO: PLAY ONCE & HOLD FINAL RESTING IMAGE ———
   const heroVideo = document.getElementById('hero-video');
   const heroPoster = document.getElementById('hero-poster');
+
+  if (heroVideo) {
+    heroVideo.addEventListener('ended', function () {
+      heroVideo.pause();
+      if (heroPoster) {
+        heroPoster.style.display = 'block';
+        heroPoster.style.opacity = '1';
+      }
+    });
+  }
+
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     if (heroVideo) heroVideo.pause();
     if (heroPoster) heroPoster.style.display = 'block';
