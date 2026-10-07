@@ -454,7 +454,735 @@
     return `₹ ${Math.round(val).toLocaleString('en-IN')}`;
   }
 
-  // ——— TAB 1: ASSET ALLOCATION SIMULATOR ———
+  // ——— 1. BASIC SIP CALCULATOR ———
+  const sipBasicMonthlyRange = document.getElementById('sip-basic-monthly-range');
+  const sipBasicRateRange = document.getElementById('sip-basic-rate-range');
+  const sipBasicHorizonRange = document.getElementById('sip-basic-horizon-range');
+  const sipBasicMonthlyVal = document.getElementById('sip-basic-monthly-val');
+  const sipBasicRateVal = document.getElementById('sip-basic-rate-val');
+  const sipBasicHorizonVal = document.getElementById('sip-basic-horizon-val');
+  const sipBasicTotalWealth = document.getElementById('sip-basic-total-wealth');
+  const sipBasicTotalGain = document.getElementById('sip-basic-total-gain');
+  const sipBasicTotalInvested = document.getElementById('sip-basic-total-invested');
+  const sipBasicMultiplier = document.getElementById('sip-basic-multiplier');
+  const sipBasicBadge = document.getElementById('sip-basic-badge');
+  const sipBasicBarInvested = document.getElementById('sip-basic-bar-invested');
+  const sipBasicBarGains = document.getElementById('sip-basic-bar-gains');
+  const sipBasicLegInv = document.getElementById('sip-basic-leg-inv');
+  const sipBasicLegGain = document.getElementById('sip-basic-leg-gain');
+  const sipBasicRatioLbl = document.getElementById('sip-basic-ratio-lbl');
+
+  if (sipBasicMonthlyRange && sipBasicRateRange && sipBasicHorizonRange) {
+    function calculateBasicSIP() {
+      const monthly = parseFloat(sipBasicMonthlyRange.value);
+      const rate = parseFloat(sipBasicRateRange.value) / 100;
+      const years = parseInt(sipBasicHorizonRange.value, 10);
+      const monthlyRate = rate / 12;
+      const months = years * 12;
+
+      sipBasicMonthlyVal.textContent = `${formatINR(monthly)} / month`;
+      sipBasicRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
+      sipBasicHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+      if (sipBasicBadge) sipBasicBadge.textContent = `${years} Year Horizon`;
+
+      const invested = monthly * months;
+      const futureValue = monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate);
+      const gain = Math.max(0, futureValue - invested);
+      const multiplier = (futureValue / invested).toFixed(2);
+
+      if (sipBasicTotalWealth) sipBasicTotalWealth.textContent = formatINR(futureValue);
+      if (sipBasicTotalGain) sipBasicTotalGain.textContent = `+${formatINR(gain)}`;
+      if (sipBasicTotalInvested) sipBasicTotalInvested.textContent = formatINR(invested);
+      if (sipBasicMultiplier) sipBasicMultiplier.textContent = `${multiplier}x`;
+      if (sipBasicLegInv) sipBasicLegInv.textContent = formatINR(invested);
+      if (sipBasicLegGain) sipBasicLegGain.textContent = formatINR(gain);
+
+      const invRatio = Math.round((invested / futureValue) * 100);
+      const gainRatio = 100 - invRatio;
+      if (sipBasicBarInvested) sipBasicBarInvested.style.width = `${invRatio}%`;
+      if (sipBasicBarGains) sipBasicBarGains.style.width = `${gainRatio}%`;
+      if (sipBasicRatioLbl) sipBasicRatioLbl.textContent = `${gainRatio}% Gains : ${invRatio}% Principal`;
+    }
+
+    sipBasicMonthlyRange.addEventListener('input', calculateBasicSIP);
+    sipBasicRateRange.addEventListener('input', calculateBasicSIP);
+    sipBasicHorizonRange.addEventListener('input', calculateBasicSIP);
+    calculateBasicSIP();
+  }
+
+  // ——— 2. LUMPSUM & SIP CALCULATOR ———
+  const lsLumpRange = document.getElementById('ls-lump-range');
+  const lsSipRange = document.getElementById('ls-sip-range');
+  const lsHorizonRange = document.getElementById('ls-horizon-range');
+  const lsRateRange = document.getElementById('ls-rate-range');
+  const lsLumpVal = document.getElementById('ls-lump-val');
+  const lsSipVal = document.getElementById('ls-sip-val');
+  const lsHorizonVal = document.getElementById('ls-horizon-val');
+  const lsRateVal = document.getElementById('ls-rate-val');
+  const lsTotalWealth = document.getElementById('ls-total-wealth');
+  const lsTotalGain = document.getElementById('ls-total-gain');
+  const lsTotalInvested = document.getElementById('ls-total-invested');
+  const lsLumpGrowVal = document.getElementById('ls-lump-grow-val');
+  const lsBarInvested = document.getElementById('ls-bar-invested');
+  const lsBarGains = document.getElementById('ls-bar-gains');
+  const lsLegInv = document.getElementById('ls-leg-inv');
+  const lsLegGain = document.getElementById('ls-leg-gain');
+  const lsRatioLbl = document.getElementById('ls-ratio-lbl');
+
+  if (lsLumpRange && lsSipRange && lsHorizonRange && lsRateRange) {
+    function calculateLumpsumSIP() {
+      const lump = parseFloat(lsLumpRange.value);
+      const sip = parseFloat(lsSipRange.value);
+      const years = parseInt(lsHorizonRange.value, 10);
+      const rate = parseFloat(lsRateRange.value) / 100;
+      const monthlyRate = rate / 12;
+      const months = years * 12;
+
+      lsLumpVal.textContent = formatINR(lump);
+      lsSipVal.textContent = `${formatINR(sip)} / month`;
+      lsHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+      lsRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
+
+      const lumpFV = lump * Math.pow(1 + rate, years);
+      const sipFV = sip * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate);
+      const totalInvested = lump + (sip * months);
+      const totalWealth = lumpFV + sipFV;
+      const totalGain = Math.max(0, totalWealth - totalInvested);
+
+      if (lsTotalWealth) lsTotalWealth.textContent = formatINR(totalWealth);
+      if (lsTotalGain) lsTotalGain.textContent = `+${formatINR(totalGain)}`;
+      if (lsTotalInvested) lsTotalInvested.textContent = formatINR(totalInvested);
+      if (lsLumpGrowVal) lsLumpGrowVal.textContent = formatINR(lumpFV);
+      if (lsLegInv) lsLegInv.textContent = formatINR(totalInvested);
+      if (lsLegGain) lsLegGain.textContent = formatINR(totalGain);
+
+      const invRatio = Math.round((totalInvested / totalWealth) * 100);
+      const gainRatio = 100 - invRatio;
+      if (lsBarInvested) lsBarInvested.style.width = `${invRatio}%`;
+      if (lsBarGains) lsBarGains.style.width = `${gainRatio}%`;
+      if (lsRatioLbl) lsRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+    }
+
+    lsLumpRange.addEventListener('input', calculateLumpsumSIP);
+    lsSipRange.addEventListener('input', calculateLumpsumSIP);
+    lsHorizonRange.addEventListener('input', calculateLumpsumSIP);
+    lsRateRange.addEventListener('input', calculateLumpsumSIP);
+    calculateLumpsumSIP();
+  }
+
+  // ——— 3. STEP-UP SIP CALCULATOR ———
+  const sipMonthlyRange = document.getElementById('sip-monthly-range');
+  const sipStepupRange = document.getElementById('sip-stepup-range');
+  const sipHorizonRange = document.getElementById('sip-horizon-range');
+  const sipRateRange = document.getElementById('sip-rate-range');
+  const sipMonthlyVal = document.getElementById('sip-monthly-val');
+  const sipStepupVal = document.getElementById('sip-stepup-val');
+  const sipHorizonVal = document.getElementById('sip-horizon-val');
+  const sipRateVal = document.getElementById('sip-rate-val');
+  const sipTotalWealth = document.getElementById('sip-total-wealth');
+  const sipTotalGain = document.getElementById('sip-total-gain');
+  const sipTotalInvested = document.getElementById('sip-total-invested');
+  const sipAdvantage = document.getElementById('sip-advantage');
+  const sipBadge = document.getElementById('sip-badge');
+  const sipBarInvested = document.getElementById('sip-bar-invested');
+  const sipBarGains = document.getElementById('sip-bar-gains');
+  const sipLegInv = document.getElementById('sip-leg-inv');
+  const sipLegGain = document.getElementById('sip-leg-gain');
+  const sipRatioLbl = document.getElementById('sip-ratio-lbl');
+
+  if (sipMonthlyRange && sipStepupRange && sipHorizonRange && sipRateRange) {
+    function calculateSIP() {
+      const initialMonthly = parseFloat(sipMonthlyRange.value);
+      const stepUpPercent = parseFloat(sipStepupRange.value) / 100;
+      const years = parseInt(sipHorizonRange.value, 10);
+      const annualRate = parseFloat(sipRateRange.value) / 100;
+      const monthlyRate = annualRate / 12;
+
+      sipMonthlyVal.textContent = `${formatINR(initialMonthly)} / month`;
+      sipStepupVal.textContent = stepUpPercent === 0 ? '0% (Flat SIP)' : `${(stepUpPercent * 100).toFixed(0)}% per year`;
+      sipHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+      sipRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.*`;
+      if (sipBadge) sipBadge.textContent = stepUpPercent === 0 ? 'Regular Flat SIP' : `+${(stepUpPercent * 100).toFixed(0)}% Annual Step-Up`;
+
+      let totalInvested = 0;
+      let futureValue = 0;
+      const totalMonths = years * 12;
+
+      for (let m = 1; m <= totalMonths; m++) {
+        const yearIndex = Math.floor((m - 1) / 12);
+        const currentMonthly = initialMonthly * Math.pow(1 + stepUpPercent, yearIndex);
+        totalInvested += currentMonthly;
+        futureValue += currentMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
+      }
+
+      let flatFV = 0;
+      for (let m = 1; m <= totalMonths; m++) {
+        flatFV += initialMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
+      }
+
+      const totalGain = Math.max(0, futureValue - totalInvested);
+      const advantage = Math.max(0, futureValue - flatFV);
+
+      if (sipTotalWealth) sipTotalWealth.textContent = formatINR(futureValue);
+      if (sipTotalGain) sipTotalGain.textContent = `+${formatINR(totalGain)}`;
+      if (sipTotalInvested) sipTotalInvested.textContent = formatINR(totalInvested);
+      if (sipAdvantage) sipAdvantage.textContent = stepUpPercent === 0 ? '₹ 0 (Base)' : `+${formatINR(advantage)}`;
+      if (sipLegInv) sipLegInv.textContent = formatINR(totalInvested);
+      if (sipLegGain) sipLegGain.textContent = formatINR(totalGain);
+
+      const invRatio = Math.round((totalInvested / futureValue) * 100);
+      const gainRatio = 100 - invRatio;
+      if (sipBarInvested) sipBarInvested.style.width = `${invRatio}%`;
+      if (sipBarGains) sipBarGains.style.width = `${gainRatio}%`;
+      if (sipRatioLbl) sipRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+    }
+
+    sipMonthlyRange.addEventListener('input', calculateSIP);
+    sipStepupRange.addEventListener('input', calculateSIP);
+    sipHorizonRange.addEventListener('input', calculateSIP);
+    sipRateRange.addEventListener('input', calculateSIP);
+    calculateSIP();
+  }
+
+  // ——— 4. SIP - COST OF DELAY CALCULATOR ———
+  const delaySipRange = document.getElementById('delay-sip-range');
+  const delayYearsRange = document.getElementById('delay-years-range');
+  const delayHorizonRange = document.getElementById('delay-horizon-range');
+  const delayRateRange = document.getElementById('delay-rate-range');
+  const delaySipVal = document.getElementById('delay-sip-val');
+  const delayYearsVal = document.getElementById('delay-years-val');
+  const delayHorizonVal = document.getElementById('delay-horizon-val');
+  const delayRateVal = document.getElementById('delay-rate-val');
+  const delayCostVal = document.getElementById('delay-cost-val');
+  const delayCatchupSip = document.getElementById('delay-catchup-sip');
+  const delayOntimeWealth = document.getElementById('delay-ontime-wealth');
+  const delayDelayedWealth = document.getElementById('delay-delayed-wealth');
+  const delayBadge = document.getElementById('delay-badge');
+  const delayBarDelayed = document.getElementById('delay-bar-delayed');
+  const delayBarLoss = document.getElementById('delay-bar-loss');
+  const delayLegDelayed = document.getElementById('delay-leg-delayed');
+  const delayLegLoss = document.getElementById('delay-leg-loss');
+  const delayRatioLbl = document.getElementById('delay-ratio-lbl');
+
+  if (delaySipRange && delayYearsRange && delayHorizonRange && delayRateRange) {
+    function calculateCostOfDelay() {
+      const sip = parseFloat(delaySipRange.value);
+      const delayYrs = parseInt(delayYearsRange.value, 10);
+      const horizonYrs = parseInt(delayHorizonRange.value, 10);
+      const rate = parseFloat(delayRateRange.value) / 100;
+      const monthlyRate = rate / 12;
+
+      delaySipVal.textContent = `${formatINR(sip)} / month`;
+      delayYearsVal.textContent = `${delayYrs} Year${delayYrs > 1 ? 's' : ''}`;
+      delayHorizonVal.textContent = `${horizonYrs} Year${horizonYrs > 1 ? 's' : ''}`;
+      delayRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
+      if (delayBadge) delayBadge.textContent = `${delayYrs} Year Delay Penalty`;
+
+      const ontimeMonths = horizonYrs * 12;
+      const ontimeWealth = sip * ((Math.pow(1 + monthlyRate, ontimeMonths) - 1) / monthlyRate) * (1 + monthlyRate);
+
+      const delayedMonths = Math.max(0, (horizonYrs - delayYrs) * 12);
+      const delayedWealth = delayedMonths > 0 ? sip * ((Math.pow(1 + monthlyRate, delayedMonths) - 1) / monthlyRate) * (1 + monthlyRate) : 0;
+      const costOfDelay = Math.max(0, ontimeWealth - delayedWealth);
+
+      const catchupSIP = delayedMonths > 0 ? (ontimeWealth * monthlyRate) / ((Math.pow(1 + monthlyRate, delayedMonths) - 1) * (1 + monthlyRate)) : 0;
+
+      if (delayCostVal) delayCostVal.textContent = `-${formatINR(costOfDelay)}`;
+      if (delayCatchupSip) delayCatchupSip.textContent = `${formatINR(catchupSIP)} / mo`;
+      if (delayOntimeWealth) delayOntimeWealth.textContent = formatINR(ontimeWealth);
+      if (delayDelayedWealth) delayDelayedWealth.textContent = formatINR(delayedWealth);
+      if (delayLegDelayed) delayLegDelayed.textContent = formatINR(delayedWealth);
+      if (delayLegLoss) delayLegLoss.textContent = formatINR(costOfDelay);
+
+      const delayedRatio = Math.round((delayedWealth / ontimeWealth) * 100);
+      const lossRatio = 100 - delayedRatio;
+      if (delayBarDelayed) delayBarDelayed.style.width = `${delayedRatio}%`;
+      if (delayBarLoss) delayBarLoss.style.width = `${lossRatio}%`;
+      if (delayRatioLbl) delayRatioLbl.textContent = `${lossRatio}% Wealth Destroyed by Delay`;
+    }
+
+    delaySipRange.addEventListener('input', calculateCostOfDelay);
+    delayYearsRange.addEventListener('input', calculateCostOfDelay);
+    delayHorizonRange.addEventListener('input', calculateCostOfDelay);
+    delayRateRange.addEventListener('input', calculateCostOfDelay);
+    calculateCostOfDelay();
+  }
+
+  // ——— 5. SIP TENURE CALCULATOR ———
+  const tenureTargetRange = document.getElementById('tenure-target-range');
+  const tenureSipRange = document.getElementById('tenure-sip-range');
+  const tenureRateRange = document.getElementById('tenure-rate-range');
+  const tenureTargetVal = document.getElementById('tenure-target-val');
+  const tenureSipVal = document.getElementById('tenure-sip-val');
+  const tenureRateVal = document.getElementById('tenure-rate-val');
+  const tenureResultYears = document.getElementById('tenure-result-years');
+  const tenureTotalGain = document.getElementById('tenure-total-gain');
+  const tenureTotalInvested = document.getElementById('tenure-total-invested');
+  const tenureBadge = document.getElementById('tenure-badge');
+  const tenureBarInvested = document.getElementById('tenure-bar-invested');
+  const tenureBarGain = document.getElementById('tenure-bar-gain');
+  const tenureLegInv = document.getElementById('tenure-leg-inv');
+  const tenureLegGain = document.getElementById('tenure-leg-gain');
+  const tenureRatioLbl = document.getElementById('tenure-ratio-lbl');
+
+  if (tenureTargetRange && tenureSipRange && tenureRateRange) {
+    function calculateSIPTenure() {
+      const targetCorpus = parseFloat(tenureTargetRange.value) * 100000;
+      const sip = parseFloat(tenureSipRange.value);
+      const rate = parseFloat(tenureRateRange.value) / 100;
+      const monthlyRate = rate / 12;
+
+      tenureTargetVal.textContent = formatINR(targetCorpus);
+      tenureSipVal.textContent = `${formatINR(sip)} / month`;
+      tenureRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
+      if (tenureBadge) tenureBadge.textContent = `Target: ${formatINR(targetCorpus)}`;
+
+      // Formula: n = ln(1 + (Target * i) / (P * (1+i))) / ln(1+i)
+      const numerator = Math.log(1 + (targetCorpus * monthlyRate) / (sip * (1 + monthlyRate)));
+      const denominator = Math.log(1 + monthlyRate);
+      const totalMonths = Math.ceil(numerator / denominator);
+
+      const years = Math.floor(totalMonths / 12);
+      const remMonths = totalMonths % 12;
+
+      const totalInvested = sip * totalMonths;
+      const totalGain = Math.max(0, targetCorpus - totalInvested);
+
+      if (tenureResultYears) tenureResultYears.textContent = `${years} Yrs ${remMonths > 0 ? remMonths + ' Mos' : ''}`;
+      if (tenureTotalGain) tenureTotalGain.textContent = `+${formatINR(totalGain)}`;
+      if (tenureTotalInvested) tenureTotalInvested.textContent = formatINR(totalInvested);
+      if (tenureLegInv) tenureLegInv.textContent = formatINR(totalInvested);
+      if (tenureLegGain) tenureLegGain.textContent = formatINR(totalGain);
+
+      const invRatio = Math.min(100, Math.max(0, Math.round((totalInvested / targetCorpus) * 100)));
+      const gainRatio = 100 - invRatio;
+      if (tenureBarInvested) tenureBarInvested.style.width = `${invRatio}%`;
+      if (tenureBarGain) tenureBarGain.style.width = `${gainRatio}%`;
+      if (tenureRatioLbl) tenureRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Principal`;
+    }
+
+    tenureTargetRange.addEventListener('input', calculateSIPTenure);
+    tenureSipRange.addEventListener('input', calculateSIPTenure);
+    tenureRateRange.addEventListener('input', calculateSIPTenure);
+    calculateSIPTenure();
+  }
+
+  // ——— 6. STP CALCULATOR ———
+  const stpSourceRange = document.getElementById('stp-source-range');
+  const stpTransferRange = document.getElementById('stp-transfer-range');
+  const stpHorizonRange = document.getElementById('stp-horizon-range');
+  const stpSourceRateRange = document.getElementById('stp-source-rate-range');
+  const stpTargetRateRange = document.getElementById('stp-target-rate-range');
+  const stpSourceVal = document.getElementById('stp-source-val');
+  const stpTransferVal = document.getElementById('stp-transfer-val');
+  const stpHorizonVal = document.getElementById('stp-horizon-val');
+  const stpRatesVal = document.getElementById('stp-rates-val');
+  const stpTotalWealth = document.getElementById('stp-total-wealth');
+  const stpNetGain = document.getElementById('stp-net-gain');
+  const stpTargetWealth = document.getElementById('stp-target-wealth');
+  const stpSourceRem = document.getElementById('stp-source-rem');
+  const stpBarTarget = document.getElementById('stp-bar-target');
+  const stpBarSource = document.getElementById('stp-bar-source');
+  const stpLegTarget = document.getElementById('stp-leg-target');
+  const stpLegSource = document.getElementById('stp-leg-source');
+  const stpRatioLbl = document.getElementById('stp-ratio-lbl');
+
+  if (stpSourceRange && stpTransferRange && stpHorizonRange && stpSourceRateRange && stpTargetRateRange) {
+    function calculateSTP() {
+      const sourceCorpus = parseFloat(stpSourceRange.value);
+      const transferMonthly = parseFloat(stpTransferRange.value);
+      const years = parseInt(stpHorizonRange.value, 10);
+      const sourceRate = parseFloat(stpSourceRateRange.value) / 100;
+      const targetRate = parseFloat(stpTargetRateRange.value) / 100;
+      const sourceMonthlyRate = sourceRate / 12;
+      const targetMonthlyRate = targetRate / 12;
+      const months = years * 12;
+
+      stpSourceVal.textContent = formatINR(sourceCorpus);
+      stpTransferVal.textContent = `${formatINR(transferMonthly)} / month`;
+      stpHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+      if (stpRatesVal) stpRatesVal.textContent = `${(sourceRate * 100).toFixed(1)}% / ${(targetRate * 100).toFixed(1)}% p.a.*`;
+
+      let curSource = sourceCorpus;
+      let curTarget = 0;
+
+      for (let m = 1; m <= months; m++) {
+        const sourceGrowth = curSource * sourceMonthlyRate;
+        const actualTransfer = Math.min(curSource + sourceGrowth, transferMonthly);
+        curSource = Math.max(0, curSource + sourceGrowth - actualTransfer);
+
+        const targetGrowth = curTarget * targetMonthlyRate;
+        curTarget = curTarget + targetGrowth + actualTransfer;
+      }
+
+      const totalWealth = curSource + curTarget;
+      const netGain = Math.max(0, totalWealth - sourceCorpus);
+
+      if (stpTotalWealth) stpTotalWealth.textContent = formatINR(totalWealth);
+      if (stpNetGain) stpNetGain.textContent = `+${formatINR(netGain)}`;
+      if (stpTargetWealth) stpTargetWealth.textContent = formatINR(curTarget);
+      if (stpSourceRem) stpSourceRem.textContent = formatINR(curSource);
+      if (stpLegTarget) stpLegTarget.textContent = formatINR(curTarget);
+      if (stpLegSource) stpLegSource.textContent = formatINR(curSource);
+
+      const targetRatio = Math.round((curTarget / totalWealth) * 100);
+      const sourceRatio = 100 - targetRatio;
+      if (stpBarTarget) stpBarTarget.style.width = `${targetRatio}%`;
+      if (stpBarSource) stpBarSource.style.width = `${sourceRatio}%`;
+      if (stpRatioLbl) stpRatioLbl.textContent = `${targetRatio}% Equity : ${sourceRatio}% Debt`;
+    }
+
+    stpSourceRange.addEventListener('input', calculateSTP);
+    stpTransferRange.addEventListener('input', calculateSTP);
+    stpHorizonRange.addEventListener('input', calculateSTP);
+    stpSourceRateRange.addEventListener('input', calculateSTP);
+    stpTargetRateRange.addEventListener('input', calculateSTP);
+    calculateSTP();
+  }
+
+  // ——— 7. SWP CALCULATOR ———
+  const swpCorpusRange = document.getElementById('swp-corpus-range');
+  const swpWithdrawRange = document.getElementById('swp-withdraw-range');
+  const swpHorizonRange = document.getElementById('swp-horizon-range');
+  const swpRateRange = document.getElementById('swp-rate-range');
+  const swpCorpusVal = document.getElementById('swp-corpus-val');
+  const swpWithdrawVal = document.getElementById('swp-withdraw-val');
+  const swpHorizonVal = document.getElementById('swp-horizon-val');
+  const swpRateVal = document.getElementById('swp-rate-val');
+  const swpTotalWithdrawn = document.getElementById('swp-total-withdrawn');
+  const swpFinalBalance = document.getElementById('swp-final-balance');
+  const swpHealthBadge = document.getElementById('swp-health-badge');
+  const swpSustainText = document.getElementById('swp-sustain-text');
+  const swpBarWithdrawn = document.getElementById('swp-bar-withdrawn');
+  const swpBarRemaining = document.getElementById('swp-bar-remaining');
+  const swpLegWithdrawn = document.getElementById('swp-leg-withdrawn');
+  const swpLegBalance = document.getElementById('swp-leg-balance');
+
+  if (swpCorpusRange && swpWithdrawRange && swpHorizonRange && swpRateRange) {
+    function calculateSWP() {
+      const corpusLakhs = parseFloat(swpCorpusRange.value);
+      const initialCorpus = corpusLakhs * 100000;
+      const monthlyWithdraw = parseFloat(swpWithdrawRange.value);
+      const years = parseInt(swpHorizonRange.value, 10);
+      const annualRate = parseFloat(swpRateRange.value) / 100;
+      const monthlyRate = annualRate / 12;
+
+      swpCorpusVal.textContent = formatINR(initialCorpus);
+      swpWithdrawVal.textContent = `${formatINR(monthlyWithdraw)} / month`;
+      swpHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+      swpRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.*`;
+
+      let currentBalance = initialCorpus;
+      let totalWithdrawn = 0;
+      let depletedMonth = 0;
+      const totalMonths = years * 12;
+
+      for (let m = 1; m <= totalMonths; m++) {
+        const growth = currentBalance * monthlyRate;
+        currentBalance = currentBalance + growth - monthlyWithdraw;
+
+        if (currentBalance <= 0 && depletedMonth === 0) {
+          depletedMonth = m;
+          currentBalance = 0;
+          totalWithdrawn += (monthlyWithdraw + currentBalance);
+          break;
+        } else {
+          totalWithdrawn += monthlyWithdraw;
+        }
+      }
+
+      if (swpTotalWithdrawn) swpTotalWithdrawn.textContent = formatINR(totalWithdrawn);
+      if (swpFinalBalance) swpFinalBalance.textContent = formatINR(currentBalance);
+      if (swpLegWithdrawn) swpLegWithdrawn.textContent = formatINR(totalWithdrawn);
+      if (swpLegBalance) swpLegBalance.textContent = formatINR(currentBalance);
+
+      if (depletedMonth > 0) {
+        const depYears = (depletedMonth / 12).toFixed(1);
+        if (swpHealthBadge) {
+          swpHealthBadge.className = 'swp-status-pill warning';
+          swpHealthBadge.textContent = `⚠️ Depletes in ${depYears} Yrs`;
+        }
+        if (swpSustainText) swpSustainText.textContent = `Withdrawal rate exceeds portfolio yield`;
+        if (swpBarWithdrawn) swpBarWithdrawn.style.width = '100%';
+        if (swpBarRemaining) swpBarRemaining.style.width = '0%';
+      } else {
+        const isGrowing = currentBalance >= initialCorpus;
+        if (swpHealthBadge) {
+          swpHealthBadge.className = 'swp-status-pill sustainable';
+          swpHealthBadge.textContent = isGrowing ? '✦ Highly Sustainable (Growing)' : '✦ Sustainable Longevity';
+        }
+        if (swpSustainText) swpSustainText.textContent = isGrowing ? 'Corpus expands while funding withdrawals' : 'Safe withdrawal corridor maintained';
+
+        const totalPool = totalWithdrawn + currentBalance;
+        const withRatio = Math.round((totalWithdrawn / totalPool) * 100);
+        const remRatio = 100 - withRatio;
+        if (swpBarWithdrawn) swpBarWithdrawn.style.width = `${withRatio}%`;
+        if (swpBarRemaining) swpBarRemaining.style.width = `${remRatio}%`;
+      }
+    }
+
+    swpCorpusRange.addEventListener('input', calculateSWP);
+    swpWithdrawRange.addEventListener('input', calculateSWP);
+    swpHorizonRange.addEventListener('input', calculateSWP);
+    swpRateRange.addEventListener('input', calculateSWP);
+    calculateSWP();
+  }
+
+  // ——— 8. EDUCATION CALCULATOR ———
+  const eduAgeRange = document.getElementById('edu-age-range');
+  const eduCostRange = document.getElementById('edu-cost-range');
+  const eduInfRange = document.getElementById('edu-inf-range');
+  const eduRateRange = document.getElementById('edu-rate-range');
+  const eduAgeVal = document.getElementById('edu-age-val');
+  const eduCostVal = document.getElementById('edu-cost-val');
+  const eduInfVal = document.getElementById('edu-inf-val');
+  const eduRateVal = document.getElementById('edu-rate-val');
+  const eduFutureCost = document.getElementById('edu-future-cost');
+  const eduReqSip = document.getElementById('edu-req-sip');
+  const eduTotalInvested = document.getElementById('edu-total-invested');
+  const eduWealthGain = document.getElementById('edu-wealth-gain');
+  const eduBadge = document.getElementById('edu-badge');
+  const eduBarInvested = document.getElementById('edu-bar-invested');
+  const eduBarGains = document.getElementById('edu-bar-gains');
+  const eduLegInv = document.getElementById('edu-leg-inv');
+  const eduLegGain = document.getElementById('edu-leg-gain');
+  const eduRatioLbl = document.getElementById('edu-ratio-lbl');
+
+  if (eduAgeRange && eduCostRange && eduInfRange && eduRateRange) {
+    function calculateEducation() {
+      const childAge = parseInt(eduAgeRange.value, 10);
+      const yearsLeft = Math.max(1, 18 - childAge);
+      const costToday = parseFloat(eduCostRange.value) * 100000;
+      const infRate = parseFloat(eduInfRange.value) / 100;
+      const growthRate = parseFloat(eduRateRange.value) / 100;
+      const monthlyRate = growthRate / 12;
+      const totalMonths = yearsLeft * 12;
+
+      eduAgeVal.textContent = `${childAge} Year${childAge === 1 ? '' : 's'} Old`;
+      eduCostVal.textContent = formatINR(costToday);
+      eduInfVal.textContent = `${(infRate * 100).toFixed(1)}% p.a.`;
+      eduRateVal.textContent = `${(growthRate * 100).toFixed(1)}% p.a.*`;
+      if (eduBadge) eduBadge.textContent = `${yearsLeft} Years to College (Age 18)`;
+
+      const futureCost = costToday * Math.pow(1 + infRate, yearsLeft);
+      const reqSIP = (futureCost * monthlyRate) / ((Math.pow(1 + monthlyRate, totalMonths) - 1) * (1 + monthlyRate));
+      const totalInvested = reqSIP * totalMonths;
+      const wealthGain = Math.max(0, futureCost - totalInvested);
+
+      if (eduFutureCost) eduFutureCost.textContent = formatINR(futureCost);
+      if (eduReqSip) eduReqSip.textContent = `${formatINR(reqSIP)} / mo`;
+      if (eduTotalInvested) eduTotalInvested.textContent = formatINR(totalInvested);
+      if (eduWealthGain) eduWealthGain.textContent = formatINR(wealthGain);
+      if (eduLegInv) eduLegInv.textContent = formatINR(totalInvested);
+      if (eduLegGain) eduLegGain.textContent = formatINR(wealthGain);
+
+      const invRatio = Math.round((totalInvested / futureCost) * 100);
+      const gainRatio = 100 - invRatio;
+      if (eduBarInvested) eduBarInvested.style.width = `${invRatio}%`;
+      if (eduBarGains) eduBarGains.style.width = `${gainRatio}%`;
+      if (eduRatioLbl) eduRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Parent Savings`;
+    }
+
+    eduAgeRange.addEventListener('input', calculateEducation);
+    eduCostRange.addEventListener('input', calculateEducation);
+    eduInfRange.addEventListener('input', calculateEducation);
+    eduRateRange.addEventListener('input', calculateEducation);
+    calculateEducation();
+  }
+
+  // ——— 9. MARRIAGE CALCULATOR ———
+  const marHorizonRange = document.getElementById('mar-horizon-range');
+  const marCostRange = document.getElementById('mar-cost-range');
+  const marInfRange = document.getElementById('mar-inf-range');
+  const marRateRange = document.getElementById('mar-rate-range');
+  const marHorizonVal = document.getElementById('mar-horizon-val');
+  const marCostVal = document.getElementById('mar-cost-val');
+  const marInfVal = document.getElementById('mar-inf-val');
+  const marRateVal = document.getElementById('mar-rate-val');
+  const marFutureCost = document.getElementById('mar-future-cost');
+  const marReqSip = document.getElementById('mar-req-sip');
+  const marTotalInvested = document.getElementById('mar-total-invested');
+  const marWealthGain = document.getElementById('mar-wealth-gain');
+  const marBadge = document.getElementById('mar-badge');
+  const marBarInvested = document.getElementById('mar-bar-invested');
+  const marBarGains = document.getElementById('mar-bar-gains');
+  const marLegInv = document.getElementById('mar-leg-inv');
+  const marLegGain = document.getElementById('mar-leg-gain');
+  const marRatioLbl = document.getElementById('mar-ratio-lbl');
+
+  if (marHorizonRange && marCostRange && marInfRange && marRateRange) {
+    function calculateMarriage() {
+      const years = parseInt(marHorizonRange.value, 10);
+      const costToday = parseFloat(marCostRange.value) * 100000;
+      const infRate = parseFloat(marInfRange.value) / 100;
+      const growthRate = parseFloat(marRateRange.value) / 100;
+      const monthlyRate = growthRate / 12;
+      const totalMonths = years * 12;
+
+      marHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+      marCostVal.textContent = formatINR(costToday);
+      marInfVal.textContent = `${(infRate * 100).toFixed(1)}% p.a.`;
+      marRateVal.textContent = `${(growthRate * 100).toFixed(1)}% p.a.*`;
+      if (marBadge) marBadge.textContent = `${years} Year Timeline`;
+
+      const futureCost = costToday * Math.pow(1 + infRate, years);
+      const reqSIP = (futureCost * monthlyRate) / ((Math.pow(1 + monthlyRate, totalMonths) - 1) * (1 + monthlyRate));
+      const totalInvested = reqSIP * totalMonths;
+      const wealthGain = Math.max(0, futureCost - totalInvested);
+
+      if (marFutureCost) marFutureCost.textContent = formatINR(futureCost);
+      if (marReqSip) marReqSip.textContent = `${formatINR(reqSIP)} / mo`;
+      if (marTotalInvested) marTotalInvested.textContent = formatINR(totalInvested);
+      if (marWealthGain) marWealthGain.textContent = formatINR(wealthGain);
+      if (marLegInv) marLegInv.textContent = formatINR(totalInvested);
+      if (marLegGain) marLegGain.textContent = formatINR(wealthGain);
+
+      const invRatio = Math.round((totalInvested / futureCost) * 100);
+      const gainRatio = 100 - invRatio;
+      if (marBarInvested) marBarInvested.style.width = `${invRatio}%`;
+      if (marBarGains) marBarGains.style.width = `${gainRatio}%`;
+      if (marRatioLbl) marRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Savings`;
+    }
+
+    marHorizonRange.addEventListener('input', calculateMarriage);
+    marCostRange.addEventListener('input', calculateMarriage);
+    marInfRange.addEventListener('input', calculateMarriage);
+    marRateRange.addEventListener('input', calculateMarriage);
+    calculateMarriage();
+  }
+
+  // ——— 10. RETIREMENT CALCULATOR ———
+  const retCurrAgeRange = document.getElementById('ret-currage-range');
+  const retRetAgeRange = document.getElementById('ret-retage-range');
+  const retExpenseRange = document.getElementById('ret-expense-range');
+  const retInfRange = document.getElementById('ret-inf-range');
+  const retPreRateRange = document.getElementById('ret-prerate-range');
+  const retAgesVal = document.getElementById('ret-ages-val');
+  const retExpenseVal = document.getElementById('ret-expense-val');
+  const retInfVal = document.getElementById('ret-inf-val');
+  const retPreRateVal = document.getElementById('ret-prerate-val');
+  const retReqCorpus = document.getElementById('ret-req-corpus');
+  const retReqSip = document.getElementById('ret-req-sip');
+  const retFutureExpense = document.getElementById('ret-future-expense');
+  const retTotalInvested = document.getElementById('ret-total-invested');
+  const retBadge = document.getElementById('ret-badge');
+  const retBarInvested = document.getElementById('ret-bar-invested');
+  const retBarGains = document.getElementById('ret-bar-gains');
+  const retLegInv = document.getElementById('ret-leg-inv');
+  const retLegGain = document.getElementById('ret-leg-gain');
+  const retRatioLbl = document.getElementById('ret-ratio-lbl');
+
+  if (retCurrAgeRange && retRetAgeRange && retExpenseRange && retInfRange && retPreRateRange) {
+    function calculateRetirement() {
+      const currAge = parseInt(retCurrAgeRange.value, 10);
+      const retAge = Math.max(currAge + 1, parseInt(retRetAgeRange.value, 10));
+      const yearsToRet = retAge - currAge;
+      const monthlyExp = parseFloat(retExpenseRange.value);
+      const infRate = parseFloat(retInfRange.value) / 100;
+      const preRate = parseFloat(retPreRateRange.value) / 100;
+
+      if (retAgesVal) retAgesVal.textContent = `${currAge} Yrs / ${retAge} Yrs`;
+      retExpenseVal.textContent = `${formatINR(monthlyExp)} / month`;
+      retInfVal.textContent = `${(infRate * 100).toFixed(1)}% p.a.`;
+      retPreRateVal.textContent = `${(preRate * 100).toFixed(1)}% p.a.*`;
+      if (retBadge) retBadge.textContent = `${yearsToRet} Years to Retirement`;
+
+      const futMonthlyExp = monthlyExp * Math.pow(1 + infRate, yearsToRet);
+      const annualExpAtRet = futMonthlyExp * 12;
+
+      // Real rate post-retirement (assumed 8.5% post-ret yield)
+      const postRate = 0.085;
+      const rReal = Math.max(0.015, (postRate - infRate) / (1 + infRate));
+      const lifespanPostRet = 25;
+      const corpusRequired = annualExpAtRet * ((1 - Math.pow(1 + rReal, -lifespanPostRet)) / rReal);
+
+      const monthlyPreRate = preRate / 12;
+      const totalMonths = yearsToRet * 12;
+      const reqSIP = (corpusRequired * monthlyPreRate) / ((Math.pow(1 + monthlyPreRate, totalMonths) - 1) * (1 + monthlyPreRate));
+      const totalInvested = reqSIP * totalMonths;
+      const wealthGrowth = Math.max(0, corpusRequired - totalInvested);
+
+      if (retReqCorpus) retReqCorpus.textContent = formatINR(corpusRequired);
+      if (retReqSip) retReqSip.textContent = `${formatINR(reqSIP)} / mo`;
+      if (retFutureExpense) retFutureExpense.textContent = `${formatINR(futMonthlyExp)} / mo`;
+      if (retTotalInvested) retTotalInvested.textContent = formatINR(totalInvested);
+      if (retLegInv) retLegInv.textContent = formatINR(totalInvested);
+      if (retLegGain) retLegGain.textContent = formatINR(wealthGrowth);
+
+      const invRatio = Math.round((totalInvested / corpusRequired) * 100);
+      const gainRatio = 100 - invRatio;
+      if (retBarInvested) retBarInvested.style.width = `${invRatio}%`;
+      if (retBarGains) retBarGains.style.width = `${gainRatio}%`;
+      if (retRatioLbl) retRatioLbl.textContent = `${gainRatio}% Compounding : ${invRatio}% Principal`;
+    }
+
+    retCurrAgeRange.addEventListener('input', calculateRetirement);
+    retRetAgeRange.addEventListener('input', calculateRetirement);
+    retExpenseRange.addEventListener('input', calculateRetirement);
+    retInfRange.addEventListener('input', calculateRetirement);
+    retPreRateRange.addEventListener('input', calculateRetirement);
+    calculateRetirement();
+  }
+
+  // ——— 11. EMI CALCULATOR ———
+  const emiLoanRange = document.getElementById('emi-loan-range');
+  const emiRateRange = document.getElementById('emi-rate-range');
+  const emiTenureRange = document.getElementById('emi-tenure-range');
+  const emiLoanVal = document.getElementById('emi-loan-val');
+  const emiRateVal = document.getElementById('emi-rate-val');
+  const emiTenureVal = document.getElementById('emi-tenure-val');
+  const emiMonthlyVal = document.getElementById('emi-monthly-val');
+  const emiTotalInterest = document.getElementById('emi-total-interest');
+  const emiTotalPayment = document.getElementById('emi-total-payment');
+  const emiInterestRatio = document.getElementById('emi-interest-ratio');
+  const emiBadge = document.getElementById('emi-badge');
+  const emiBarPrincipal = document.getElementById('emi-bar-principal');
+  const emiBarInterest = document.getElementById('emi-bar-interest');
+  const emiLegPrincipal = document.getElementById('emi-leg-principal');
+  const emiLegInterest = document.getElementById('emi-leg-interest');
+  const emiRatioLbl = document.getElementById('emi-ratio-lbl');
+
+  if (emiLoanRange && emiRateRange && emiTenureRange) {
+    function calculateEMI() {
+      const loanLakhs = parseFloat(emiLoanRange.value);
+      const principal = loanLakhs * 100000;
+      const annualRate = parseFloat(emiRateRange.value) / 100;
+      const tenureYears = parseInt(emiTenureRange.value, 10);
+      const monthlyRate = annualRate / 12;
+      const totalMonths = tenureYears * 12;
+
+      emiLoanVal.textContent = formatINR(principal);
+      emiRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.`;
+      emiTenureVal.textContent = `${tenureYears} Year${tenureYears > 1 ? 's' : ''}`;
+      if (emiBadge) emiBadge.textContent = `${tenureYears}-Year Schedule`;
+
+      // EMI = P * r * (1+r)^n / ((1+r)^n - 1)
+      const emi = (principal * monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1);
+      const totalPayment = emi * totalMonths;
+      const totalInterest = Math.max(0, totalPayment - principal);
+      const ratio = ((totalInterest / principal) * 100).toFixed(1);
+
+      if (emiMonthlyVal) emiMonthlyVal.textContent = `₹ ${Math.round(emi).toLocaleString('en-IN')}`;
+      if (emiTotalInterest) emiTotalInterest.textContent = formatINR(totalInterest);
+      if (emiTotalPayment) emiTotalPayment.textContent = formatINR(totalPayment);
+      if (emiInterestRatio) emiInterestRatio.textContent = `${ratio}%`;
+      if (emiLegPrincipal) emiLegPrincipal.textContent = formatINR(principal);
+      if (emiLegInterest) emiLegInterest.textContent = formatINR(totalInterest);
+
+      const princRatio = Math.round((principal / totalPayment) * 100);
+      const intRatio = 100 - princRatio;
+      if (emiBarPrincipal) emiBarPrincipal.style.width = `${princRatio}%`;
+      if (emiBarInterest) emiBarInterest.style.width = `${intRatio}%`;
+      if (emiRatioLbl) emiRatioLbl.textContent = `${intRatio}% Interest : ${princRatio}% Principal`;
+    }
+
+    emiLoanRange.addEventListener('input', calculateEMI);
+    emiRateRange.addEventListener('input', calculateEMI);
+    emiTenureRange.addEventListener('input', calculateEMI);
+    calculateEMI();
+  }
+
+  // ——— 12. ASSET ALLOCATION SIMULATOR ———
   const corpusRange = document.getElementById('corpus-range');
   const horizonRange = document.getElementById('horizon-range');
   const corpusVal = document.getElementById('corpus-val');
@@ -537,177 +1265,6 @@
     });
 
     calculateAlloc();
-  }
-
-  // ——— TAB 2: STEP-UP SIP CALCULATOR ———
-  const sipMonthlyRange = document.getElementById('sip-monthly-range');
-  const sipStepupRange = document.getElementById('sip-stepup-range');
-  const sipHorizonRange = document.getElementById('sip-horizon-range');
-  const sipRateRange = document.getElementById('sip-rate-range');
-
-  const sipMonthlyVal = document.getElementById('sip-monthly-val');
-  const sipStepupVal = document.getElementById('sip-stepup-val');
-  const sipHorizonVal = document.getElementById('sip-horizon-val');
-  const sipRateVal = document.getElementById('sip-rate-val');
-
-  const sipTotalWealth = document.getElementById('sip-total-wealth');
-  const sipTotalGain = document.getElementById('sip-total-gain');
-  const sipTotalInvested = document.getElementById('sip-total-invested');
-  const sipAdvantage = document.getElementById('sip-advantage');
-  const sipBadge = document.getElementById('sip-badge');
-
-  const sipBarInvested = document.getElementById('sip-bar-invested');
-  const sipBarGains = document.getElementById('sip-bar-gains');
-  const sipLegInv = document.getElementById('sip-leg-inv');
-  const sipLegGain = document.getElementById('sip-leg-gain');
-  const sipRatioLbl = document.getElementById('sip-ratio-lbl');
-
-  if (sipMonthlyRange && sipStepupRange && sipHorizonRange && sipRateRange) {
-    function calculateSIP() {
-      const initialMonthly = parseFloat(sipMonthlyRange.value);
-      const stepUpPercent = parseFloat(sipStepupRange.value) / 100;
-      const years = parseInt(sipHorizonRange.value, 10);
-      const annualRate = parseFloat(sipRateRange.value) / 100;
-      const monthlyRate = annualRate / 12;
-
-      sipMonthlyVal.textContent = `${formatINR(initialMonthly)} / month`;
-      sipStepupVal.textContent = stepUpPercent === 0 ? '0% (Flat SIP)' : `${(stepUpPercent * 100).toFixed(0)}% per year`;
-      sipHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
-      sipRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.*`;
-      if (sipBadge) sipBadge.textContent = stepUpPercent === 0 ? 'Regular Flat SIP' : `+${(stepUpPercent * 100).toFixed(0)}% Annual Step-Up`;
-
-      let totalInvested = 0;
-      let futureValue = 0;
-      const totalMonths = years * 12;
-
-      for (let m = 1; m <= totalMonths; m++) {
-        const yearIndex = Math.floor((m - 1) / 12);
-        const currentMonthly = initialMonthly * Math.pow(1 + stepUpPercent, yearIndex);
-        totalInvested += currentMonthly;
-        futureValue += currentMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
-      }
-
-      // Flat SIP comparison
-      let flatFV = 0;
-      for (let m = 1; m <= totalMonths; m++) {
-        flatFV += initialMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
-      }
-
-      const totalGain = Math.max(0, futureValue - totalInvested);
-      const advantage = Math.max(0, futureValue - flatFV);
-
-      if (sipTotalWealth) sipTotalWealth.textContent = formatINR(futureValue);
-      if (sipTotalGain) sipTotalGain.textContent = `+${formatINR(totalGain)}`;
-      if (sipTotalInvested) sipTotalInvested.textContent = formatINR(totalInvested);
-      if (sipAdvantage) sipAdvantage.textContent = stepUpPercent === 0 ? '₹ 0 (Base)' : `+${formatINR(advantage)}`;
-
-      if (sipLegInv) sipLegInv.textContent = formatINR(totalInvested);
-      if (sipLegGain) sipLegGain.textContent = formatINR(totalGain);
-
-      const invRatio = Math.round((totalInvested / futureValue) * 100);
-      const gainRatio = 100 - invRatio;
-      if (sipBarInvested) sipBarInvested.style.width = `${invRatio}%`;
-      if (sipBarGains) sipBarGains.style.width = `${gainRatio}%`;
-      if (sipRatioLbl) sipRatioLbl.textContent = `${gainRatio}% Gains : ${invRatio}% Principal`;
-    }
-
-    sipMonthlyRange.addEventListener('input', calculateSIP);
-    sipStepupRange.addEventListener('input', calculateSIP);
-    sipHorizonRange.addEventListener('input', calculateSIP);
-    sipRateRange.addEventListener('input', calculateSIP);
-
-    calculateSIP();
-  }
-
-  // ——— TAB 3: SWP RETIREMENT PLANNER ———
-  const swpCorpusRange = document.getElementById('swp-corpus-range');
-  const swpWithdrawRange = document.getElementById('swp-withdraw-range');
-  const swpHorizonRange = document.getElementById('swp-horizon-range');
-  const swpRateRange = document.getElementById('swp-rate-range');
-
-  const swpCorpusVal = document.getElementById('swp-corpus-val');
-  const swpWithdrawVal = document.getElementById('swp-withdraw-val');
-  const swpHorizonVal = document.getElementById('swp-horizon-val');
-  const swpRateVal = document.getElementById('swp-rate-val');
-
-  const swpTotalWithdrawn = document.getElementById('swp-total-withdrawn');
-  const swpFinalBalance = document.getElementById('swp-final-balance');
-  const swpHealthBadge = document.getElementById('swp-health-badge');
-  const swpSustainText = document.getElementById('swp-sustain-text');
-  const swpBarWithdrawn = document.getElementById('swp-bar-withdrawn');
-  const swpBarRemaining = document.getElementById('swp-bar-remaining');
-  const swpLegWithdrawn = document.getElementById('swp-leg-withdrawn');
-  const swpLegBalance = document.getElementById('swp-leg-balance');
-
-  if (swpCorpusRange && swpWithdrawRange && swpHorizonRange && swpRateRange) {
-    function calculateSWP() {
-      const corpusLakhs = parseFloat(swpCorpusRange.value);
-      const initialCorpus = corpusLakhs * 100000;
-      const monthlyWithdraw = parseFloat(swpWithdrawRange.value);
-      const years = parseInt(swpHorizonRange.value, 10);
-      const annualRate = parseFloat(swpRateRange.value) / 100;
-      const monthlyRate = annualRate / 12;
-
-      swpCorpusVal.textContent = formatINR(initialCorpus);
-      swpWithdrawVal.textContent = `${formatINR(monthlyWithdraw)} / month`;
-      swpHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
-      swpRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.*`;
-
-      let currentBalance = initialCorpus;
-      let totalWithdrawn = 0;
-      let depletedMonth = 0;
-      const totalMonths = years * 12;
-
-      for (let m = 1; m <= totalMonths; m++) {
-        const growth = currentBalance * monthlyRate;
-        currentBalance = currentBalance + growth - monthlyWithdraw;
-
-        if (currentBalance <= 0 && depletedMonth === 0) {
-          depletedMonth = m;
-          currentBalance = 0;
-          totalWithdrawn += (monthlyWithdraw + currentBalance); // partial
-          break;
-        } else {
-          totalWithdrawn += monthlyWithdraw;
-        }
-      }
-
-      if (swpTotalWithdrawn) swpTotalWithdrawn.textContent = formatINR(totalWithdrawn);
-      if (swpFinalBalance) swpFinalBalance.textContent = formatINR(currentBalance);
-      if (swpLegWithdrawn) swpLegWithdrawn.textContent = formatINR(totalWithdrawn);
-      if (swpLegBalance) swpLegBalance.textContent = formatINR(currentBalance);
-
-      if (depletedMonth > 0) {
-        const depYears = (depletedMonth / 12).toFixed(1);
-        if (swpHealthBadge) {
-          swpHealthBadge.className = 'swp-status-pill warning';
-          swpHealthBadge.textContent = `⚠️ Depletes in ${depYears} Yrs`;
-        }
-        if (swpSustainText) swpSustainText.textContent = `Withdrawal rate exceeds portfolio yield`;
-        if (swpBarWithdrawn) swpBarWithdrawn.style.width = '100%';
-        if (swpBarRemaining) swpBarRemaining.style.width = '0%';
-      } else {
-        const isGrowing = currentBalance >= initialCorpus;
-        if (swpHealthBadge) {
-          swpHealthBadge.className = 'swp-status-pill sustainable';
-          swpHealthBadge.textContent = isGrowing ? '✦ Highly Sustainable (Growing)' : '✦ Sustainable Longevity';
-        }
-        if (swpSustainText) swpSustainText.textContent = isGrowing ? 'Corpus expands while funding withdrawals' : 'Safe withdrawal corridor maintained';
-
-        const totalPool = totalWithdrawn + currentBalance;
-        const withRatio = Math.round((totalWithdrawn / totalPool) * 100);
-        const remRatio = 100 - withRatio;
-        if (swpBarWithdrawn) swpBarWithdrawn.style.width = `${withRatio}%`;
-        if (swpBarRemaining) swpBarRemaining.style.width = `${remRatio}%`;
-      }
-    }
-
-    swpCorpusRange.addEventListener('input', calculateSWP);
-    swpWithdrawRange.addEventListener('input', calculateSWP);
-    swpHorizonRange.addEventListener('input', calculateSWP);
-    swpRateRange.addEventListener('input', calculateSWP);
-
-    calculateSWP();
   }
 
   // ——— TAB 4: FINANCIAL PLANNING DIAGNOSTIC QUIZ ———
@@ -1291,66 +1848,96 @@
         let pointerEvents = 'auto';
 
         if (isMobile) {
-          // Mobile: Center card prominent + partial non-overlapping side hints
+          // Mobile: Center card prominent + visible peeking side cards
+          const stepMob = Math.min(Math.max(vw * 0.62, 190), 240);
           if (offset === 0) {
             tx = 0;
-            tz = 20;
+            tz = 30;
             rotY = 0;
             scale = 1;
             opacity = 1;
-            zIndex = 20;
+            zIndex = 25;
           } else if (offset === -1) {
-            tx = -310;
-            tz = -30;
-            rotY = 12;
+            tx = -stepMob;
+            tz = -10;
+            rotY = 10;
             scale = 0.88;
-            opacity = 0.70;
-            zIndex = 14;
+            opacity = 0.92;
+            zIndex = 18;
           } else if (offset === 1) {
-            tx = 310;
-            tz = -30;
-            rotY = -12;
+            tx = stepMob;
+            tz = -10;
+            rotY = -10;
             scale = 0.88;
-            opacity = 0.70;
-            zIndex = 14;
+            opacity = 0.92;
+            zIndex = 18;
+          } else if (offset === -2) {
+            tx = -stepMob * 1.8;
+            tz = -40;
+            rotY = 16;
+            scale = 0.76;
+            opacity = 0.45;
+            zIndex = 10;
+          } else if (offset === 2) {
+            tx = stepMob * 1.8;
+            tz = -40;
+            rotY = -16;
+            scale = 0.76;
+            opacity = 0.45;
+            zIndex = 10;
           } else {
-            tx = offset * 500;
+            tx = offset * stepMob;
             opacity = 0;
-            zIndex = 5;
+            zIndex = 2;
             pointerEvents = 'none';
           }
         } else if (isTablet) {
-          // Tablet: Clean 3-card non-overlapping perspective
+          // Tablet: Clean 3-card and 5-card non-overlapping perspective
+          const stepTab = Math.min(Math.max(vw * 0.36, 260), 320);
           if (offset === 0) {
             tx = 0;
             tz = 50;
             rotY = 0;
-            scale = 1.03;
+            scale = 1.04;
             opacity = 1;
-            zIndex = 20;
+            zIndex = 25;
           } else if (offset === -1) {
-            tx = -330;
-            tz = -20;
-            rotY = 16;
+            tx = -stepTab;
+            tz = -15;
+            rotY = 14;
             scale = 0.90;
-            opacity = 0.92;
-            zIndex = 15;
+            opacity = 0.95;
+            zIndex = 18;
           } else if (offset === 1) {
-            tx = 330;
-            tz = -20;
-            rotY = -16;
+            tx = stepTab;
+            tz = -15;
+            rotY = -14;
             scale = 0.90;
-            opacity = 0.92;
-            zIndex = 15;
+            opacity = 0.95;
+            zIndex = 18;
+          } else if (offset === -2) {
+            tx = -stepTab * 1.85;
+            tz = -60;
+            rotY = 24;
+            scale = 0.80;
+            opacity = 0.78;
+            zIndex = 12;
+          } else if (offset === 2) {
+            tx = stepTab * 1.85;
+            tz = -60;
+            rotY = -24;
+            scale = 0.80;
+            opacity = 0.78;
+            zIndex = 12;
           } else {
-            tx = offset * 580;
+            tx = offset * stepTab;
             opacity = 0;
-            zIndex = 8;
+            zIndex = 2;
             pointerEvents = 'none';
           }
         } else {
-          // Desktop / Widescreen: Generous spacing ensuring ZERO card overlap
-          const stepX = vw >= 1440 ? 390 : (vw >= 1200 ? 360 : 330);
+          // Desktop / Widescreen: Generous spacing ensuring ZERO card overlap & high legibility
+          const stepX = vw >= 1440 ? 360 : (vw >= 1200 ? 330 : 300);
           
           if (offset === 0) {
             tx = 0;
@@ -1361,32 +1948,32 @@
             zIndex = 25;
           } else if (offset === -1) {
             tx = -stepX;
-            tz = -20;
-            rotY = 18;
+            tz = -15;
+            rotY = 14;
             scale = 0.92;
-            opacity = 0.94;
-            zIndex = 18;
+            opacity = 0.96;
+            zIndex = 20;
           } else if (offset === 1) {
             tx = stepX;
-            tz = -20;
-            rotY = -18;
+            tz = -15;
+            rotY = -14;
             scale = 0.92;
-            opacity = 0.94;
-            zIndex = 18;
+            opacity = 0.96;
+            zIndex = 20;
           } else if (offset === -2) {
-            tx = -stepX * 1.95;
-            tz = -85;
-            rotY = 32;
+            tx = -stepX * 1.85;
+            tz = -60;
+            rotY = 25;
             scale = 0.82;
-            opacity = 0.80;
-            zIndex = 12;
+            opacity = 0.82;
+            zIndex = 14;
           } else if (offset === 2) {
-            tx = stepX * 1.95;
-            tz = -85;
-            rotY = -32;
+            tx = stepX * 1.85;
+            tz = -60;
+            rotY = -25;
             scale = 0.82;
-            opacity = 0.80;
-            zIndex = 12;
+            opacity = 0.82;
+            zIndex = 14;
           } else {
             tx = offset * stepX * 1.5;
             opacity = 0;
@@ -1399,6 +1986,8 @@
         card.style.opacity = opacity;
         card.style.zIndex = zIndex;
         card.style.pointerEvents = pointerEvents;
+        card.tabIndex = pointerEvents !== 'none' ? 0 : -1;
+        card.setAttribute('aria-hidden', opacity === 0 ? 'true' : 'false');
       });
     }
 
@@ -1451,24 +2040,52 @@
       });
     }
 
-    // Card click behavior: if inactive card clicked -> rotate to center; if active card clicked -> open article modal
+    // Card click & keyboard behavior: clicking any card selects it and directly opens the article modal to view
     cards.forEach((card, idx) => {
-      card.addEventListener('click', (e) => {
-        if (hasDragged) return; // ignore click if drag occurred
-
+      const activateCard = (e) => {
+        if (hasDragged) return;
         const blogId = card.getAttribute('data-blog-id');
-        if (idx !== activeIndex) {
+        goToIndex(idx);
+        resetAutoPlay();
+        if (blogId) {
+          openBlogModal(blogId);
+        }
+      };
+
+      card.addEventListener('click', activateCard);
+
+      // Keyboard access on cards
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          goToIndex(idx);
-          resetAutoPlay();
-        } else {
-          // Active focal card clicked or CTA clicked
-          if (blogId) {
-            openBlogModal(blogId);
-          }
+          activateCard(e);
         }
       });
     });
+
+    // Also allow clicking the active ticker pill to open article modal
+    if (tickerTitle) {
+      const tickerPill = tickerTitle.closest('.blog-stage-ticker-pill') || document.getElementById('blog-stage-ticker');
+      if (tickerPill) {
+        tickerPill.setAttribute('role', 'button');
+        tickerPill.setAttribute('tabindex', '0');
+        tickerPill.setAttribute('title', 'Click to read full article');
+        const handleTickerClick = () => {
+          const currentActiveCard = cards[activeIndex];
+          if (currentActiveCard) {
+            const blogId = currentActiveCard.getAttribute('data-blog-id');
+            if (blogId) openBlogModal(blogId);
+          }
+        };
+        tickerPill.addEventListener('click', handleTickerClick);
+        tickerPill.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleTickerClick();
+          }
+        });
+      }
+    }
 
     // Touch & Pointer Drag Gestures
     function onPointerDown(e) {
@@ -1485,7 +2102,7 @@
       if (!isDragging) return;
       currentDragX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
       dragOffset = currentDragX - startX;
-      if (Math.abs(dragOffset) > 8) {
+      if (Math.abs(dragOffset) > 20) {
         hasDragged = true;
       }
     }
@@ -1506,7 +2123,7 @@
 
       setTimeout(() => {
         hasDragged = false;
-      }, 50);
+      }, 100);
     }
 
     // Mouse drag listeners
@@ -1533,12 +2150,12 @@
       }
     });
 
-    // Automatic Continuous 3D Rotation (rotates every 3.5 seconds)
+    // Automatic Continuous 3D Rotation (rotates every 4.0 seconds)
     function startAutoPlay() {
       stopAutoPlay();
       autoPlayTimer = setInterval(() => {
         nextSlide();
-      }, 3500);
+      }, 4000);
     }
 
     function stopAutoPlay() {
@@ -1578,7 +2195,7 @@
     let resizeTimeout;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(updateCarousel, 120);
+      resizeTimeout = setTimeout(updateCarousel, 100);
     }, { passive: true });
 
     // Initial render and immediate auto-rotation start
@@ -1586,13 +2203,59 @@
     startAutoPlay();
   }
 
+  // ——— BLOG DIRECTORY GRID & FILTER TABS ———
+  function initBlogGrid() {
+    const grid = document.getElementById('blog-grid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.querySelectorAll('.blog-grid-card'));
+    const tabButtons = Array.from(document.querySelectorAll('#blog-filter-tabs .blog-tab'));
+
+    // Card clicks to open modal
+    cards.forEach((card) => {
+      const blogId = card.getAttribute('data-blog-id');
+      card.addEventListener('click', (e) => {
+        if (blogId) {
+          openBlogModal(blogId);
+        }
+      });
+      card.setAttribute('tabindex', '0');
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          if (blogId) openBlogModal(blogId);
+        }
+      });
+    });
+
+    // Tab filter handling
+    tabButtons.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabButtons.forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const filter = tab.getAttribute('data-filter');
+        cards.forEach((card) => {
+          const category = card.getAttribute('data-category');
+          if (filter === 'all' || category === filter) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+  }
+
   // ——— BOOTSTRAP INITIALIZATION ———
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initBlog3DCarousel();
+      initBlogGrid();
     });
   } else {
     initBlog3DCarousel();
+    initBlogGrid();
   }
 
 })();
