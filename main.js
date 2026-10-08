@@ -23,6 +23,7 @@
     }
   }
   window.addEventListener('scroll', updateNav, { passive: true });
+  window.addEventListener('resize', updateNav, { passive: true });
   updateNav();
 
   // ——— MOBILE DRAWER ———
@@ -444,14 +445,22 @@
 
   // Currency helper (Indian Lakhs / Crores)
   function formatINR(val) {
-    if (val >= 10000000) {
-      const cr = (val / 10000000).toFixed(2).replace(/\.00$/, '');
-      return `₹ ${cr} Cr`;
-    } else if (val >= 100000) {
-      const lk = (val / 100000).toFixed(2).replace(/\.00$/, '');
-      return `₹ ${lk} Lakhs`;
+    if (val === null || val === undefined || isNaN(val) || !isFinite(val)) {
+      return '₹ 0';
     }
-    return `₹ ${Math.round(val).toLocaleString('en-IN')}`;
+    const isNeg = val < 0;
+    const absVal = Math.abs(val);
+    let str = '';
+    if (absVal >= 10000000) {
+      const cr = (absVal / 10000000).toFixed(2).replace(/\.00$/, '');
+      str = `₹ ${cr} Cr`;
+    } else if (absVal >= 100000) {
+      const lk = (absVal / 100000).toFixed(2).replace(/\.00$/, '');
+      str = `₹ ${lk} Lakhs`;
+    } else {
+      str = `₹ ${Math.round(absVal).toLocaleString('en-IN')}`;
+    }
+    return isNeg ? `-${str}` : str;
   }
 
   // ——— 1. BASIC SIP CALCULATOR ———
@@ -1183,202 +1192,381 @@
   }
 
   // ——— 12. ASSET ALLOCATION SIMULATOR ———
-  const corpusRange = document.getElementById('corpus-range');
-  const horizonRange = document.getElementById('horizon-range');
-  const corpusVal = document.getElementById('corpus-val');
-  const horizonVal = document.getElementById('horizon-val');
-  const strategyBadge = document.getElementById('strategy-badge');
-  const projWealth = document.getElementById('projected-wealth');
-  const projGain = document.getElementById('projected-gain');
-  const strategyBtns = document.querySelectorAll('.strategy-pill');
-  
-  const sliceEq = document.querySelector('.alloc-slice.equity');
-  const sliceDebt = document.querySelector('.alloc-slice.debt');
-  const sliceAif = document.querySelector('.alloc-slice.aif');
-  const sliceGold = document.querySelector('.alloc-slice.gold');
+  const allocInvRange = document.getElementById('alloc-inv-range');
+  const allocRiskRange = document.getElementById('alloc-risk-range');
+  const allocHorizonRange = document.getElementById('alloc-horizon-range');
+  const allocInvVal = document.getElementById('alloc-inv-val');
+  const allocRiskVal = document.getElementById('alloc-risk-val');
+  const allocHorizonVal = document.getElementById('alloc-horizon-val');
+  const allocProfBadge = document.getElementById('alloc-prof-badge');
+  const allocExpReturn = document.getElementById('alloc-exp-return');
+  const allocVolRisk = document.getElementById('alloc-vol-risk');
+  const allocBarEquity = document.getElementById('alloc-bar-equity');
+  const allocBarDebt = document.getElementById('alloc-bar-debt');
+  const allocBarGold = document.getElementById('alloc-bar-gold');
+  const allocBarAlt = document.getElementById('alloc-bar-alt');
+  const allocEquityPct = document.getElementById('alloc-equity-pct');
+  const allocEquityVal = document.getElementById('alloc-equity-val');
+  const allocDebtPct = document.getElementById('alloc-debt-pct');
+  const allocDebtVal = document.getElementById('alloc-debt-val');
+  const allocGoldPct = document.getElementById('alloc-gold-pct');
+  const allocGoldVal = document.getElementById('alloc-gold-val');
+  const allocAltPct = document.getElementById('alloc-alt-pct');
+  const allocAltVal = document.getElementById('alloc-alt-val');
+  const allocProfDesc = document.getElementById('alloc-prof-desc');
 
-  const legEq = document.getElementById('leg-eq');
-  const legDebt = document.getElementById('leg-debt');
-  const legAif = document.getElementById('leg-aif');
-  const legGold = document.getElementById('leg-gold');
-
-  if (corpusRange && horizonRange) {
-    const strategies = {
-      conservative: {
-        name: 'Capital Preservation Mandate',
-        rate: 0.095,
-        allocation: { equity: 25, debt: 55, aif: 10, gold: 10 }
+  if (allocInvRange && allocRiskRange && allocHorizonRange) {
+    const riskProfiles = {
+      1: {
+        badge: 'Capital Preservation Mandate',
+        label: 'Conservative (Level 1)',
+        rate: 8.8,
+        volatility: 'Low (Defensive)',
+        volColor: '#10b981',
+        alloc: { equity: 15, debt: 65, gold: 15, alt: 5 },
+        desc: 'Optimized for maximum capital stability and predictable liquidity with predominant allocation to AAA/Sovereign fixed income and sovereign gold hedging.'
       },
-      balanced: {
-        name: 'Balanced Growth Mandate',
-        rate: 0.132,
-        allocation: { equity: 50, debt: 25, aif: 15, gold: 10 }
+      2: {
+        badge: 'Income & Stability Mandate',
+        label: 'Moderate-Cons (Level 2)',
+        rate: 10.4,
+        volatility: 'Low-Moderate',
+        volColor: '#38bdf8',
+        alloc: { equity: 30, debt: 50, gold: 12, alt: 8 },
+        desc: 'Balanced debt-tilted allocation providing recurring cash-flow and inflation hedging with measured participation in high-quality large-cap equities.'
       },
-      aggressive: {
-        name: 'High-Alpha Equity Mandate',
-        rate: 0.168,
-        allocation: { equity: 70, debt: 10, aif: 15, gold: 5 }
+      3: {
+        badge: 'Balanced Alpha Mandate',
+        label: 'Balanced Growth (Level 3)',
+        rate: 12.8,
+        volatility: 'Moderate',
+        volColor: '#60a5fa',
+        alloc: { equity: 55, debt: 25, gold: 10, alt: 10 },
+        desc: 'Strategic core-and-satellite asset allocation blending multi-cap equities, high-yield structured debt, physical gold, and real estate REITs for optimal risk-adjusted alpha.'
+      },
+      4: {
+        badge: 'Capital Appreciation Mandate',
+        label: 'Aggressive Growth (Level 4)',
+        rate: 14.6,
+        volatility: 'Moderate-High',
+        volColor: '#f59e0b',
+        alloc: { equity: 70, debt: 15, gold: 7, alt: 8 },
+        desc: 'Growth-tilted equity mandate with dynamic mid/small-cap exposure, targeted private equity secondaries, and a tactical sovereign gold hedge against drawdowns.'
+      },
+      5: {
+        badge: 'High-Alpha Growth Mandate',
+        label: 'High Alpha (Level 5)',
+        rate: 16.8,
+        volatility: 'High (Aggressive Alpha)',
+        volColor: '#f43f5e',
+        alloc: { equity: 80, debt: 5, gold: 5, alt: 10 },
+        desc: 'Concentrated wealth generation portfolio focused on high-conviction PMS equity strategies, thematic pre-IPO/AIF opportunities, and global asset hedges.'
       }
     };
 
-    let currentStrategy = 'balanced';
+    const horizonLabels = {
+      1: '1-3 Years (Short-Term)',
+      2: '3-5 Years (Medium-Term)',
+      3: '7-10 Years (Long-Term)',
+      4: '10+ Years (Multi-Gen)'
+    };
 
-    function calculateAlloc() {
-      const corpusLakhs = parseFloat(corpusRange.value);
-      const years = parseInt(horizonRange.value, 10);
-      const strat = strategies[currentStrategy];
+    function calculateAssetAllocation() {
+      const capitalLakhs = parseFloat(allocInvRange.value);
+      const riskLevel = parseInt(allocRiskRange.value, 10);
+      const horizonLevel = parseInt(allocHorizonRange.value, 10);
+      const profile = riskProfiles[riskLevel] || riskProfiles[3];
 
-      corpusVal.textContent = formatINR(corpusLakhs * 100000);
-      horizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
-      if (strategyBadge) strategyBadge.textContent = strat.name;
+      const totalCapital = capitalLakhs * 100000;
 
-      const corpusRupees = corpusLakhs * 100000;
-      const futureWealthRupees = corpusRupees * Math.pow(1 + strat.rate, years);
-      const wealthGainRupees = futureWealthRupees - corpusRupees;
+      if (allocInvVal) allocInvVal.textContent = formatINR(totalCapital);
+      if (allocRiskVal) allocRiskVal.textContent = profile.label;
+      if (allocHorizonVal) allocHorizonVal.textContent = horizonLabels[horizonLevel] || '7-10 Years';
+      if (allocProfBadge) allocProfBadge.textContent = profile.badge;
+      if (allocExpReturn) allocExpReturn.textContent = `${profile.rate.toFixed(1)}% p.a.*`;
+      if (allocVolRisk) {
+        allocVolRisk.textContent = profile.volatility;
+        allocVolRisk.style.color = profile.volColor;
+      }
 
-      if (projWealth) projWealth.textContent = formatINR(futureWealthRupees);
-      if (projGain) projGain.textContent = `+${formatINR(wealthGainRupees)}`;
+      const eqVal = (profile.alloc.equity / 100) * totalCapital;
+      const debtVal = (profile.alloc.debt / 100) * totalCapital;
+      const goldVal = (profile.alloc.gold / 100) * totalCapital;
+      const altVal = (profile.alloc.alt / 100) * totalCapital;
 
-      const alloc = strat.allocation;
-      if (sliceEq) sliceEq.style.width = `${alloc.equity}%`;
-      if (sliceDebt) sliceDebt.style.width = `${alloc.debt}%`;
-      if (sliceAif) sliceAif.style.width = `${alloc.aif}%`;
-      if (sliceGold) sliceGold.style.width = `${alloc.gold}%`;
+      if (allocBarEquity) allocBarEquity.style.width = `${profile.alloc.equity}%`;
+      if (allocBarDebt) allocBarDebt.style.width = `${profile.alloc.debt}%`;
+      if (allocBarGold) allocBarGold.style.width = `${profile.alloc.gold}%`;
+      if (allocBarAlt) allocBarAlt.style.width = `${profile.alloc.alt}%`;
 
-      if (legEq) legEq.textContent = `${alloc.equity}%`;
-      if (legDebt) legDebt.textContent = `${alloc.debt}%`;
-      if (legAif) legAif.textContent = `${alloc.aif}%`;
-      if (legGold) legGold.textContent = `${alloc.gold}%`;
+      if (allocEquityPct) allocEquityPct.textContent = `${profile.alloc.equity}%`;
+      if (allocEquityVal) allocEquityVal.textContent = formatINR(eqVal);
+      if (allocDebtPct) allocDebtPct.textContent = `${profile.alloc.debt}%`;
+      if (allocDebtVal) allocDebtVal.textContent = formatINR(debtVal);
+      if (allocGoldPct) allocGoldPct.textContent = `${profile.alloc.gold}%`;
+      if (allocGoldVal) allocGoldVal.textContent = formatINR(goldVal);
+      if (allocAltPct) allocAltPct.textContent = `${profile.alloc.alt}%`;
+      if (allocAltVal) allocAltVal.textContent = formatINR(altVal);
+
+      if (allocProfDesc) {
+        allocProfDesc.innerHTML = `<strong>Strategic Thesis:</strong> ${profile.desc}`;
+      }
     }
 
-    corpusRange.addEventListener('input', calculateAlloc);
-    horizonRange.addEventListener('input', calculateAlloc);
-
-    strategyBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (!btn.hasAttribute('data-strategy')) return;
-        strategyBtns.forEach(b => { if (b.hasAttribute('data-strategy')) b.classList.remove('active'); });
-        btn.classList.add('active');
-        currentStrategy = btn.getAttribute('data-strategy');
-        calculateAlloc();
-      });
-    });
-
-    calculateAlloc();
+    allocInvRange.addEventListener('input', calculateAssetAllocation);
+    allocRiskRange.addEventListener('input', calculateAssetAllocation);
+    allocHorizonRange.addEventListener('input', calculateAssetAllocation);
+    calculateAssetAllocation();
   }
 
-  // ——— TAB 4: FINANCIAL PLANNING DIAGNOSTIC QUIZ ———
-  const quizQ1Btns = document.querySelectorAll('#quiz-q1 .quiz-opt-btn');
-  const quizQ2Btns = document.querySelectorAll('#quiz-q2 .quiz-opt-btn');
-  const quizQ3Btns = document.querySelectorAll('#quiz-q3 .strategy-pill');
+  // ——— 13. FAMILY OFFICE DIAGNOSTIC AUDIT QUIZ ———
+  const btnStartQuiz = document.getElementById('btn-start-quiz');
+  const quizStartView = document.getElementById('quiz-start-view');
+  const quizQuestionView = document.getElementById('quiz-question-view');
+  const quizResultView = document.getElementById('quiz-result-view');
+  const quizProgressBar = document.getElementById('quiz-progress-bar');
+  const quizQNum = document.getElementById('quiz-q-num');
+  const quizQTotal = document.getElementById('quiz-q-total');
+  const quizProgressText = document.getElementById('quiz-progress-text');
+  const quizQTitle = document.getElementById('quiz-q-title');
+  const quizQDesc = document.getElementById('quiz-q-desc');
+  const quizOptionsContainer = document.getElementById('quiz-options-container');
+  const quizBtnPrev = document.getElementById('quiz-btn-prev');
+  const quizBtnNext = document.getElementById('quiz-btn-next');
 
-  const quizMandateBadge = document.getElementById('quiz-mandate-badge');
-  const quizMandateTitle = document.getElementById('quiz-mandate-title');
-  const quizMandateDesc = document.getElementById('quiz-mandate-desc');
-  const quizPoint1 = document.getElementById('quiz-point-1');
-  const quizPoint2 = document.getElementById('quiz-point-2');
-  const quizPoint3 = document.getElementById('quiz-point-3');
-  const btnQuizBook = document.getElementById('btn-quiz-book');
+  const quizScoreNum = document.getElementById('quiz-score-num');
+  const quizScoreBadge = document.getElementById('quiz-score-badge');
+  const quizScoreTitle = document.getElementById('quiz-score-title');
+  const quizScoreDesc = document.getElementById('quiz-score-desc');
+  const quizDimGov = document.getElementById('quiz-dim-governance');
+  const quizDimTax = document.getElementById('quiz-dim-tax');
+  const quizDimAlloc = document.getElementById('quiz-dim-allocation');
+  const quizDimRisk = document.getElementById('quiz-dim-risk');
+  const quizTalkingPoints = document.getElementById('quiz-talking-points');
+  const btnQuizCta = document.getElementById('btn-quiz-cta');
+  const btnRetakeQuiz = document.getElementById('btn-retake-quiz');
 
-  if (quizQ1Btns.length && quizQ2Btns.length) {
-    let selQ1 = 'cxo';
-    let selQ2 = 'growth';
-    let selQ3 = '2cr-10cr';
-
-    const diagnosticMatrix = {
-      'cxo_growth': {
-        badge: 'Executive Alpha Mandate',
-        title: 'High-Alpha PMS & Tax Optimization for CxOs',
-        desc: 'Focus on diversifying concentrated employer equity/ESOPs into institutional PMS and AIFs while building tax-advantaged passive income.',
-        p1: 'White-list portfolio audit of existing direct stocks and mutual funds.',
-        p2: 'Tax-efficient capital gains management under new LTCG rules.',
-        p3: 'Structuring an emergency liquidity treasury buffer.'
+  if (btnStartQuiz && quizQuestionView && quizResultView) {
+    const quizQuestions = [
+      {
+        dim: 'governance',
+        title: 'How is your family\'s primary wealth structured for asset protection and succession?',
+        desc: 'Select the option that most accurately reflects your current estate and holding architecture.',
+        options: [
+          { text: 'Private Family Trust registered with institutional trustee bylaws & cross-generational succession', score: 20 },
+          { text: 'Registered Wills executed, indexed, and periodically updated with trusted legal counsel', score: 15 },
+          { text: 'Informal family understandings and joint bank/property nominations without executed trusts', score: 8 },
+          { text: 'No formal will, trust, or estate succession mechanism established to date', score: 3 }
+        ]
       },
-      'cxo_tax': {
-        badge: 'Tax Alpha Structuring',
-        title: 'Personal Tax & Liability Governance',
-        desc: 'Comprehensive restructuring of your assets to eliminate tax drag, optimize deductions, and protect high-bracket salary streams.',
-        p1: 'Full tax-drag assessment across all fixed income and equity instruments.',
-        p2: 'Structuring Section 54/54EC capital gains shelters.',
-        p3: 'Integrating family member tax slabs for legal wealth distribution.'
+      {
+        dim: 'tax',
+        title: 'How actively is tax drag harvested across your family balance sheet?',
+        desc: 'Assesses optimization across LTCG, STCG, Section 54/54EC, HUF structures, and dividend yields.',
+        options: [
+          { text: 'Institutional tax harvesting across HUF, corporate balance sheets, and individual family slabs', score: 20 },
+          { text: 'Standard tax filing with annual 80C deductions but without multi-entity capital gains sheltering', score: 14 },
+          { text: 'Substantial gains idling in traditional taxable fixed deposits (>30% tax drag bracket)', score: 8 },
+          { text: 'Unassessed high-gain real estate, business sale, or ESOP exercises with impending tax liabilities', score: 4 }
+        ]
       },
-      'business_treasury': {
-        badge: 'Corporate Treasury Governance',
-        title: 'SME & Corporate Treasury Liquidity Mandate',
-        desc: 'Deploying surplus operating cash into ultra-short duration and arbitrage funds to generate superior post-tax yield without locking liquidity.',
-        p1: 'Cash-flow modeling to align with tax advance and vendor payout schedules.',
-        p2: 'Zero-credit-risk corporate debt and arbitrage selection.',
-        p3: 'Ring-fencing business liabilities from personal family assets.'
+      {
+        dim: 'allocation',
+        title: 'How is your total net worth distributed across asset classes?',
+        desc: 'Evaluates portfolio diversification, liquidity corridors, and non-correlated downside hedges.',
+        options: [
+          { text: 'Calibrated multi-asset mix (Equity PMS/AIF, AAA Corporate Debt, Sovereign Gold, Global Assets)', score: 20 },
+          { text: 'Primarily mutual funds and direct equities with ad-hoc periodic review meetings', score: 15 },
+          { text: 'Heavy real estate concentration (>60% of family net worth) with illiquidity vulnerability', score: 8 },
+          { text: 'Uncoordinated holdings scattered across multiple retail bank RM recommendations', score: 4 }
+        ]
       },
-      'family_estate': {
-        badge: 'Multi-Gen Family Office Mandate',
-        title: 'Private Family Trust & Legacy Succession',
-        desc: 'Creating an enduring multi-generational estate structure with bespoke family trust deeds, asset ring-fencing, and next-gen stewardship.',
-        p1: 'Drafting private family trust constitution and governance bylaws.',
-        p2: 'Seamless cross-generational transfer without probate delays.',
-        p3: 'Consolidated family balance sheet reporting across all entities.'
+      {
+        dim: 'risk',
+        title: 'What liquidity buffer and liability shields protect your family against emergencies?',
+        desc: 'Measures treasury cash runway and ring-fencing against commercial or personal liabilities.',
+        options: [
+          { text: '6-12 months operating buffer in ultra-short funds plus dedicated high-coverage liability vaults', score: 20 },
+          { text: '3-6 months cash in conventional savings accounts with adequate term health insurance', score: 14 },
+          { text: 'Emergency liquidity reliant on liquidating equity holdings or short-term loan borrowing', score: 7 },
+          { text: 'Limited cash runway with business operating cash and family wealth commingled', score: 3 }
+        ]
       },
-      'retiree_tax': {
-        badge: 'Capital Preservation & SWP Yield',
-        title: 'Retirement Cash-Flow & Capital Protection',
-        desc: 'Constructing a resilient SWP portfolio with monthly income guarantees, inflation-hedged equity exposure, and medical safety vaults.',
-        p1: 'Structuring monthly tax-efficient SWP payouts.',
-        p2: 'Insulating retirement corpus against deep equity market drawdowns.',
-        p3: 'Optimizing healthcare liquidity and nomination succession.'
+      {
+        dim: 'governance',
+        title: 'How is product due diligence and conflict of interest managed for your investments?',
+        desc: 'Assesses fiduciary alignment, fee transparency, and whitelist product audits.',
+        options: [
+          { text: 'Independent fiduciary whitelist audit with zero commission bias and direct institutional access', score: 20 },
+          { text: 'Self-researched mix of direct mutual funds and direct equity stock baskets', score: 14 },
+          { text: 'Substantial holdings in traditional endowment policies or high-expense insurance ULIPs', score: 7 },
+          { text: 'Heavy single-employer ESOP or promoter equity concentration with unhedged market exposure', score: 4 }
+        ]
       }
-    };
+    ];
 
-    function updateQuiz() {
-      const key = `${selQ1}_${selQ2}`;
-      const data = diagnosticMatrix[key] || {
-        badge: 'Bespoke Wealth Management Mandate',
-        title: 'Holistic Wealth Stewardship & Planning',
-        desc: `Customized strategy tailored for your ${selQ3} portfolio to maximize risk-adjusted growth, tax efficiency, and long-term security.`,
-        p1: 'Fiduciary audit of existing mutual fund, debt, and PMS holdings.',
-        p2: 'Strategic multi-asset allocation tailored to your specific timeline.',
-        p3: 'Tax-optimized wealth succession and family legacy protection.'
-      };
+    let currentQIndex = 0;
+    let userAnswers = new Array(quizQuestions.length).fill(null);
 
-      if (quizMandateBadge) quizMandateBadge.textContent = data.badge;
-      if (quizMandateTitle) quizMandateTitle.textContent = data.title;
-      if (quizMandateDesc) quizMandateDesc.textContent = data.desc;
-      if (quizPoint1) quizPoint1.textContent = data.p1;
-      if (quizPoint2) quizPoint2.textContent = data.p2;
-      if (quizPoint3) quizPoint3.textContent = data.p3;
+    function renderQuestion(idx) {
+      const q = quizQuestions[idx];
+      if (!q) return;
 
-      if (btnQuizBook) {
-        btnQuizBook.href = `contact.html?audit=requested&profile=${encodeURIComponent(selQ1)}&priority=${encodeURIComponent(selQ2)}&scale=${encodeURIComponent(selQ3)}`;
+      if (quizQNum) quizQNum.textContent = `${idx + 1}`;
+      if (quizQTotal) quizQTotal.textContent = `${quizQuestions.length}`;
+      const pct = Math.round(((idx + 1) / quizQuestions.length) * 100);
+      if (quizProgressBar) quizProgressBar.style.width = `${pct}%`;
+      if (quizProgressText) quizProgressText.textContent = `${pct}% Complete`;
+
+      if (quizQTitle) quizQTitle.textContent = q.title;
+      if (quizQDesc) quizQDesc.textContent = q.desc;
+
+      if (quizOptionsContainer) {
+        quizOptionsContainer.innerHTML = '';
+        q.options.forEach((opt, oIdx) => {
+          const optDiv = document.createElement('div');
+          optDiv.className = `quiz-option-choice ${userAnswers[idx] === oIdx ? 'selected' : ''}`;
+          optDiv.innerHTML = `
+            <div class="quiz-opt-radio"></div>
+            <div class="quiz-opt-text">${opt.text}</div>
+          `;
+          optDiv.addEventListener('click', () => {
+            userAnswers[idx] = oIdx;
+            quizOptionsContainer.querySelectorAll('.quiz-option-choice').forEach(el => el.classList.remove('selected'));
+            optDiv.classList.add('selected');
+            if (quizBtnNext) quizBtnNext.disabled = false;
+          });
+          quizOptionsContainer.appendChild(optDiv);
+        });
+      }
+
+      if (quizBtnPrev) {
+        quizBtnPrev.style.display = idx > 0 ? 'inline-flex' : 'none';
+      }
+      if (quizBtnNext) {
+        quizBtnNext.textContent = idx === quizQuestions.length - 1 ? 'Generate Audit Scorecard ✦' : 'Next Question →';
+        quizBtnNext.disabled = userAnswers[idx] === null;
       }
     }
 
-    quizQ1Btns.forEach(b => {
-      b.addEventListener('click', () => {
-        quizQ1Btns.forEach(btn => btn.classList.remove('active'));
-        b.classList.add('active');
-        selQ1 = b.getAttribute('data-q1');
-        updateQuiz();
+    function calculateAndShowResults() {
+      let totalScore = 0;
+      const dimScores = { governance: 0, tax: 0, allocation: 0, risk: 0 };
+      const dimMax = { governance: 40, tax: 20, allocation: 20, risk: 20 };
+
+      quizQuestions.forEach((q, idx) => {
+        const selOptIdx = userAnswers[idx] !== null ? userAnswers[idx] : 0;
+        const score = q.options[selOptIdx].score;
+        totalScore += score;
+        dimScores[q.dim] += score;
       });
+
+      const govPct = Math.min(100, Math.round((dimScores.governance / dimMax.governance) * 100));
+      const taxPct = Math.min(100, Math.round((dimScores.tax / dimMax.tax) * 100));
+      const allocPct = Math.min(100, Math.round((dimScores.allocation / dimMax.allocation) * 100));
+      const riskPct = Math.min(100, Math.round((dimScores.risk / dimMax.risk) * 100));
+
+      if (quizScoreNum) quizScoreNum.textContent = totalScore;
+      if (quizDimGov) quizDimGov.textContent = `${govPct}%`;
+      if (quizDimTax) quizDimTax.textContent = `${taxPct}%`;
+      if (quizDimAlloc) quizDimAlloc.textContent = `${allocPct}%`;
+      if (quizDimRisk) quizDimRisk.textContent = `${riskPct}%`;
+
+      const govFill = document.querySelector('#quiz-tab .quiz-dimension-card:nth-child(1) .quiz-dim-fill');
+      const taxFill = document.querySelector('#quiz-tab .quiz-dimension-card:nth-child(2) .quiz-dim-fill');
+      const allocFill = document.querySelector('#quiz-tab .quiz-dimension-card:nth-child(3) .quiz-dim-fill');
+      const riskFill = document.querySelector('#quiz-tab .quiz-dimension-card:nth-child(4) .quiz-dim-fill');
+
+      if (govFill) govFill.style.width = `${govPct}%`;
+      if (taxFill) taxFill.style.width = `${taxPct}%`;
+      if (allocFill) allocFill.style.width = `${allocPct}%`;
+      if (riskFill) riskFill.style.width = `${riskPct}%`;
+
+      let tierBadge = 'Institutional Grade Resilience';
+      let tierTitle = 'Exceptional Strategic Architecture';
+      let tierDesc = 'Your family balance sheet exhibits superior risk governance, robust succession mechanisms, and strategic multi-asset allocation.';
+
+      if (totalScore < 60) {
+        tierBadge = 'Critical Governance Gaps Identified';
+        tierTitle = 'High Vulnerability to Tax & Succession Drag';
+        tierDesc = 'Significant exposure detected in estate succession, tax inefficiencies, or unhedged concentration risks. Immediate restructuring recommended.';
+      } else if (totalScore < 80) {
+        tierBadge = 'Strong Foundation (Optimization Required)';
+        tierTitle = 'Solid Wealth Core with Strategic Gaps';
+        tierDesc = 'Good discipline in asset accumulation, but opportunities exist to insulate gains under new tax rules and structure enduring family succession.';
+      }
+
+      if (quizScoreBadge) quizScoreBadge.textContent = tierBadge;
+      if (quizScoreTitle) quizScoreTitle.textContent = tierTitle;
+      if (quizScoreDesc) quizScoreDesc.textContent = tierDesc;
+
+      if (quizTalkingPoints) {
+        quizTalkingPoints.innerHTML = `
+          <div class="quiz-talking-point">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span><strong>Fiduciary Portfolio Audit:</strong> Independent review of legacy mutual funds, direct stocks, and high-expense insurance holdings to eliminate underperforming drag.</span>
+          </div>
+          <div class="quiz-talking-point">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span><strong>Tax & Capital Gains Structuring:</strong> Multi-entity alignment under Section 54/54EC and HUF partitions to legally shield generational compounding.</span>
+          </div>
+          <div class="quiz-talking-point">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span><strong>Estate Succession Mandate:</strong> Tailored family trust constitution and private governance charter for frictionless legacy transfer.</span>
+          </div>
+        `;
+      }
+
+      if (btnQuizCta) {
+        btnQuizCta.href = `contact.html?audit=scorecard&score=${totalScore}&gov=${govPct}&tax=${taxPct}&alloc=${allocPct}`;
+      }
+
+      if (quizQuestionView) quizQuestionView.style.display = 'none';
+      if (quizResultView) {
+        quizResultView.style.display = 'block';
+        quizResultView.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    btnStartQuiz.addEventListener('click', () => {
+      if (quizStartView) quizStartView.style.display = 'none';
+      if (quizQuestionView) {
+        quizQuestionView.style.display = 'block';
+        currentQIndex = 0;
+        renderQuestion(currentQIndex);
+      }
     });
 
-    quizQ2Btns.forEach(b => {
-      b.addEventListener('click', () => {
-        quizQ2Btns.forEach(btn => btn.classList.remove('active'));
-        b.classList.add('active');
-        selQ2 = b.getAttribute('data-q2');
-        updateQuiz();
+    if (quizBtnPrev) {
+      quizBtnPrev.addEventListener('click', () => {
+        if (currentQIndex > 0) {
+          currentQIndex--;
+          renderQuestion(currentQIndex);
+        }
       });
-    });
+    }
 
-    quizQ3Btns.forEach(b => {
-      b.addEventListener('click', () => {
-        quizQ3Btns.forEach(btn => btn.classList.remove('active'));
-        b.classList.add('active');
-        selQ3 = b.getAttribute('data-q3');
-        updateQuiz();
+    if (quizBtnNext) {
+      quizBtnNext.addEventListener('click', () => {
+        if (userAnswers[currentQIndex] === null) return;
+        if (currentQIndex < quizQuestions.length - 1) {
+          currentQIndex++;
+          renderQuestion(currentQIndex);
+        } else {
+          calculateAndShowResults();
+        }
       });
-    });
+    }
 
-    updateQuiz();
+    if (btnRetakeQuiz) {
+      btnRetakeQuiz.addEventListener('click', () => {
+        userAnswers = new Array(quizQuestions.length).fill(null);
+        currentQIndex = 0;
+        if (quizResultView) quizResultView.style.display = 'none';
+        if (quizQuestionView) quizQuestionView.style.display = 'none';
+        if (quizStartView) quizStartView.style.display = 'block';
+      });
+    }
   }
 
   // ——— HOMEPAGE SERVICES CATEGORY FILTER TABS ———

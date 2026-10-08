@@ -7,7 +7,7 @@ export default defineConfig({
     open: false,
     watch: {
       usePolling: false,
-      ignored: ['**/public/videos/**', '**/assets/video/**']
+      ignored: ['**/public/videos/**', '**/assets/video/**', '**/hars_sharma/**', '**/dist/**', '**/*.mp4', '**/*.webm']
     }
   },
   build: {
