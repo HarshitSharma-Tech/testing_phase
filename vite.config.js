@@ -14,6 +14,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        calculators: resolve(__dirname, 'calculators.html'),
         about: resolve(__dirname, 'about.html'),
         services: resolve(__dirname, 'services.html'),
         blog: resolve(__dirname, 'blog.html'),

@@ -68,6 +68,7 @@
     var raf    = null;
     var heroVisible = true;
     var tabVisible  = !document.hidden;
+    var mouse = { x: -9999, y: -9999, active: false };
 
     var GOLDS = [
       '255, 198, 20',   // Radiant 24K Gold
@@ -204,11 +205,29 @@
         p.x   += p.vx + Math.sin(p.swP) * p.swA;
         p.y   += p.vy;
         p.rot += p.rotV;
+
+        var boostAlpha = 1;
+        if (mouse.active) {
+          var dx = mouse.x - p.x;
+          var dy = mouse.y - p.y;
+          var distSq = dx * dx + dy * dy;
+          var radius = 175;
+          if (distSq < radius * radius && distSq > 9) {
+            var dist = Math.sqrt(distSq);
+            var norm = (radius - dist) / radius; // 1 at cursor center, 0 at outer boundary
+            var force = norm * norm * 0.052; // smooth quadratic magnetic pull
+            p.x += dx * force;
+            p.y += dy * force;
+            p.rot += p.rotV * (1 + norm * 2.5);
+            boostAlpha = 1 + norm * 0.35;
+          }
+        }
+
         var fadeIn  = Math.min(1, p.y / 40);
         var fadeOut = Math.min(1, (H - p.y) / 40);
         var fade    = Math.max(0, Math.min(fadeIn, fadeOut));
         var tw      = 0.76 + 0.24 * Math.sin(ts * 0.0007 * p.twF * 60 + p.twP);
-        var a       = p.a * fade * tw;
+        var a       = Math.min(1, p.a * fade * tw * boostAlpha);
         if (a > 0.008) drawP(p, a);
         if (p.y > H + 22 || p.x > W + 60 || p.x < -60) rain[i] = mkRain(false);
       }
@@ -219,6 +238,21 @@
         c.x   += c.vx + Math.sin(c.swP) * c.swA;
         c.y   += c.vy;
         c.rot += c.rotV;
+
+        if (mouse.active) {
+          var cdx = mouse.x - c.x;
+          var cdy = mouse.y - c.y;
+          var cDistSq = cdx * cdx + cdy * cdy;
+          var cRadius = 150;
+          if (cDistSq < cRadius * cRadius && cDistSq > 9) {
+            var cDist = Math.sqrt(cDistSq);
+            var cNorm = (cRadius - cDist) / cRadius;
+            var cForce = cNorm * cNorm * 0.038;
+            c.x += cdx * cForce;
+            c.y += cdy * cForce;
+          }
+        }
+
         c.life--;
         var t  = Math.max(0, c.life / c.maxL);
         var ca = c.a * (t < 0.15 ? (t / 0.15) : Math.pow(t, 0.7));
@@ -302,6 +336,47 @@
       clicks.push(mkClick(cx, cy));
       if (clicks.length > 50) clicks.splice(0, clicks.length - 50);
     }, { passive: true });
+
+    // ── Mouse & Pointer tracking for dynamic interactive attraction ──
+    function updatePointer(clientX, clientY) {
+      if (!heroVisible) {
+        mouse.active = false;
+        return;
+      }
+      var rect = heroSection.getBoundingClientRect();
+      var px = clientX - rect.left;
+      var py = clientY - rect.top;
+      // Active within or slightly beyond hero boundaries
+      if (px >= -50 && px <= W + 50 && py >= -50 && py <= H + 50) {
+        mouse.x = px;
+        mouse.y = py;
+        mouse.active = true;
+      } else {
+        mouse.active = false;
+      }
+    }
+
+    function onPointerMove(e) {
+      updatePointer(e.clientX, e.clientY);
+    }
+
+    function onPointerLeave() {
+      mouse.active = false;
+      mouse.x = -9999;
+      mouse.y = -9999;
+    }
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    window.addEventListener('pointerdown', onPointerMove, { passive: true });
+
+    window.addEventListener('touchmove', function(e) {
+      if (e.touches && e.touches[0]) {
+        updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+    window.addEventListener('touchend', onPointerLeave, { passive: true });
+    window.addEventListener('touchcancel', onPointerLeave, { passive: true });
 
     // ── Resize ────────────────────────────────────────────────
     var rTimer;
@@ -427,20 +502,36 @@
   const calcTabs = document.querySelectorAll('.calc-tab-btn');
   const calcPanels = document.querySelectorAll('.calc-tab-panel');
 
+  function activateCalcTab(tabId) {
+    if (!tabId) return;
+    const targetTab = document.querySelector(`.calc-tab-btn[data-tab="${tabId}"]`);
+    const targetPanel = document.getElementById(tabId);
+    if (targetTab && targetPanel) {
+      calcTabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      calcPanels.forEach(p => p.classList.remove('active'));
+
+      targetTab.classList.add('active');
+      targetTab.setAttribute('aria-selected', 'true');
+      targetPanel.classList.add('active');
+    }
+  }
+
   if (calcTabs.length && calcPanels.length) {
     calcTabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        calcTabs.forEach(t => t.classList.remove('active'));
-        calcPanels.forEach(p => p.classList.remove('active'));
-
-        tab.classList.add('active');
         const targetId = tab.getAttribute('data-tab');
-        const targetPanel = document.getElementById(targetId);
-        if (targetPanel) {
-          targetPanel.classList.add('active');
-        }
+        activateCalcTab(targetId);
       });
     });
+
+    // Check if initial hash matches a calculator tab
+    if (window.location.hash) {
+      const hashId = window.location.hash.replace('#', '');
+      activateCalcTab(hashId);
+    }
   }
 
   // Currency helper (Indian Lakhs / Crores)
@@ -909,7 +1000,7 @@
         const depYears = (depletedMonth / 12).toFixed(1);
         if (swpHealthBadge) {
           swpHealthBadge.className = 'swp-status-pill warning';
-          swpHealthBadge.textContent = `⚠️ Depletes in ${depYears} Yrs`;
+          swpHealthBadge.textContent = `✦ Depletes in ${depYears} Yrs`;
         }
         if (swpSustainText) swpSustainText.textContent = `Withdrawal rate exceeds portfolio yield`;
         if (swpBarWithdrawn) swpBarWithdrawn.style.width = '100%';
