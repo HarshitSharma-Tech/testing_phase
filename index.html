@@ -235,6 +235,9 @@
 </head>
 
 <body>
+  <!-- Top Reading Progress Indicator -->
+  <div class="top-scroll-progress" id="top-scroll-progress" role="progressbar" aria-label="Reading Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+
   <!-- ═══ TOP UTILITY BAR ═══ -->
   <div class="top-bar" id="top-bar">
     <div class="container top-bar-inner">
@@ -332,6 +335,77 @@
       <a href="contact.html" class="btn btn-primary" id="drawer-consult-btn">Book Consultation</a>
     </div>
   </nav>
+
+  <!-- ═══ FLOATING SCROLL JOURNEY HUD & MOBILE SECTION BADGE ═══ -->
+  <nav class="scroll-journey-dock" id="scroll-journey-dock" aria-label="Page Chapter Navigation">
+    <div class="journey-track" aria-hidden="true">
+      <div class="journey-progress-fill" id="journey-progress-fill"></div>
+    </div>
+    <ul class="journey-pips">
+      <li class="journey-item active" data-target="hero">
+        <button type="button" class="journey-pip" aria-label="Chapter 01: The Firm">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">01 // The Firm</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="about">
+        <button type="button" class="journey-pip" aria-label="Chapter 02: Our Story">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">02 // Our Story</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="services">
+        <button type="button" class="journey-pip" aria-label="Chapter 03: Wealth Disciplines">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">03 // Disciplines</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="portfolio-calculators">
+        <button type="button" class="journey-pip" aria-label="Chapter 04: Compounding Suite">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">04 // Calculators</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="approach">
+        <button type="button" class="journey-pip" aria-label="Chapter 05: Advisory Protocol">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">05 // Approach</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="team">
+        <button type="button" class="journey-pip" aria-label="Chapter 06: Senior Stewards">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">06 // Leadership</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="testimonials">
+        <button type="button" class="journey-pip" aria-label="Chapter 07: Client Perspectives">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">07 // Perspectives</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="portal-hub">
+        <button type="button" class="journey-pip" aria-label="Chapter 08: Digital Ecosystem">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">08 // Digital Vault</span>
+        </button>
+      </li>
+      <li class="journey-item" data-target="consult">
+        <button type="button" class="journey-pip" aria-label="Chapter 09: Private Consultation">
+          <span class="journey-dot"></span>
+          <span class="journey-tooltip">09 // Consultation</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Mobile Floating Active Chapter Badge -->
+  <aside class="mobile-section-badge" id="mobile-section-badge" aria-live="polite">
+    <span class="msb-dot"></span>
+    <span class="msb-num" id="msb-num">01</span>
+    <span class="msb-sep">/</span>
+    <span class="msb-text" id="msb-text">The Firm</span>
+  </aside>
 
   <!-- ═══ HERO SECTION (Modern Luxury Penthouse Video & 3D Sculpture) ═══ -->
   <section class="hero" id="hero" aria-label="Hero Section">
@@ -433,6 +507,7 @@
 
   <!-- ═══ ABOUT SECTION ═══ -->
   <section class="about-section" id="about" aria-labelledby="about-heading">
+    <div class="section-ghost-watermark" aria-hidden="true">HERITAGE</div>
     <div class="container">
       <div class="about-grid">
         <div class="about-visual reveal">
@@ -454,7 +529,11 @@
         </div>
 
         <div class="about-content">
-          <div class="section-label reveal">Our Story</div>
+          <div class="chapter-milestone reveal">
+            <span class="chapter-kicker">CHAPTER 02</span>
+            <span class="chapter-pipe">·</span>
+            <span class="chapter-sub">OUR STORY &amp; HERITAGE</span>
+          </div>
           <h2 class="about-h2 reveal reveal-delay-1" id="about-heading">
             A Boutique Firm Built on<br><em>Trust, Integrity</em><br>& Lasting Relationships
           </h2>
@@ -507,9 +586,14 @@
 
   <!-- ═══ SERVICES SECTION (CREATIVE WHITE / IVORY LUXURY THEME) ═══ -->
   <section class="services-section services-light-theme" id="services" aria-labelledby="services-heading">
+    <div class="section-ghost-watermark" aria-hidden="true">DISCIPLINES</div>
     <div class="container">
       <div class="section-header centered">
-        <div class="section-label section-label-dark reveal">Our Advisory Disciplines</div>
+        <div class="chapter-milestone reveal">
+          <span class="chapter-kicker">CHAPTER 03</span>
+          <span class="chapter-pipe">·</span>
+          <span class="chapter-sub">WEALTH DISCIPLINES</span>
+        </div>
         <h2 class="section-h2 section-h2-dark reveal reveal-delay-1" id="services-heading">
           Boutique Wealth Architecture &amp;<br><em>Institutional Precision</em>
         </h2>
@@ -845,11 +929,16 @@
 
   <!-- ═══ INTERACTIVE FINANCIAL CALCULATORS SUITE ═══ -->
   <section class="portfolio-studio-section" id="portfolio-calculators" aria-labelledby="calc-heading">
+    <div class="section-ghost-watermark" aria-hidden="true">COMPOUNDING</div>
     <a id="portfolio-studio" style="position: absolute; top: -100px; visibility: hidden;"></a>
     <div class="container">
       <div class="studio-wrapper">
         <div class="studio-header centered" style="max-width: 820px; margin: 0 auto var(--space-4); text-align: center;">
-          <div class="section-label reveal">Institutional Financial Modeling &amp; Advisory</div>
+          <div class="chapter-milestone reveal">
+            <span class="chapter-kicker">CHAPTER 04</span>
+            <span class="chapter-pipe">·</span>
+            <span class="chapter-sub">COMPOUNDING LAB</span>
+          </div>
           <h2 class="section-h2 reveal reveal-delay-1" id="calc-heading">
             Institutional Wealth <em>Calculators &amp; Wealth Suite</em>
           </h2>
@@ -1525,9 +1614,14 @@
 
   <!-- ═══ PROCESS SECTION ═══ -->
   <section class="process-section" id="approach" aria-labelledby="process-heading">
+    <div class="section-ghost-watermark" aria-hidden="true">PROTOCOL</div>
     <div class="container">
       <div class="section-header centered">
-        <div class="section-label reveal">How We Work</div>
+        <div class="chapter-milestone reveal">
+          <span class="chapter-kicker">CHAPTER 05</span>
+          <span class="chapter-pipe">·</span>
+          <span class="chapter-sub">ADVISORY PROTOCOL</span>
+        </div>
         <h2 class="section-h2 reveal reveal-delay-1" id="process-heading">
           Our Advisory<br><em>Approach</em>
         </h2>
@@ -1587,9 +1681,14 @@
 
   <!-- ═══ MEET OUR ADVISORS SECTION ═══ -->
   <section class="team-section" id="team" aria-labelledby="team-heading">
+    <div class="section-ghost-watermark" aria-hidden="true">STEWARDS</div>
     <div class="container">
       <div class="section-header centered">
-        <div class="section-label reveal">Verified Leadership</div>
+        <div class="chapter-milestone reveal">
+          <span class="chapter-kicker">CHAPTER 06</span>
+          <span class="chapter-pipe">·</span>
+          <span class="chapter-sub">SENIOR STEWARDSHIP</span>
+        </div>
         <h2 class="section-h2 reveal reveal-delay-1" id="team-heading">
           Meet Our<br><em>Senior Advisors</em>
         </h2>
@@ -1695,9 +1794,14 @@
 
   <!-- ═══ TESTIMONIALS SECTION ═══ -->
   <section class="testimonials-section" id="testimonials" aria-labelledby="testimonials-heading">
+    <div class="section-ghost-watermark" aria-hidden="true">PERSPECTIVES</div>
     <div class="container">
       <div class="section-header centered">
-        <div class="section-label reveal">Client Voices</div>
+        <div class="chapter-milestone reveal">
+          <span class="chapter-kicker">CHAPTER 07</span>
+          <span class="chapter-pipe">·</span>
+          <span class="chapter-sub">CLIENT PERSPECTIVES</span>
+        </div>
         <h2 class="section-h2 reveal reveal-delay-1" id="testimonials-heading">
           Trusted by<br><em>Discerning Investors</em>
         </h2>
@@ -1937,10 +2041,15 @@
 
   <!-- ═══ INVESTOR PORTAL & CLIENT APP HUB ═══ -->
   <section class="portal-hub-section" id="portal-hub" aria-labelledby="portal-heading">
+    <div class="section-ghost-watermark" aria-hidden="true">VAULT</div>
     <div class="container">
       <div class="portal-hub-grid">
         <div>
-          <div class="section-label reveal">Digital Wealth Access</div>
+          <div class="chapter-milestone reveal">
+            <span class="chapter-kicker">CHAPTER 08</span>
+            <span class="chapter-pipe">·</span>
+            <span class="chapter-sub">DIGITAL ECOSYSTEM</span>
+          </div>
           <h2 class="section-h2 reveal reveal-delay-1" id="portal-heading">
             Investor Portal &amp;<br><em>Mobile Wealth Tracking</em>
           </h2>
@@ -1995,7 +2104,11 @@
     <div class="cta-bg-glow"></div>
     <div class="container">
       <div class="cta-inner">
-        <div class="section-label reveal" style="justify-content:center;">Take the First Step</div>
+        <div class="chapter-milestone reveal" style="margin-left:auto;margin-right:auto;">
+          <span class="chapter-kicker">FINALE 09</span>
+          <span class="chapter-pipe">·</span>
+          <span class="chapter-sub">PRIVATE CONSULTATION</span>
+        </div>
         <h2 class="cta-h2 reveal reveal-delay-1" id="cta-heading">
           Begin Building Your<br><em>Financial Legacy</em>
         </h2>

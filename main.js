@@ -49,7 +49,132 @@
       });
     });
   }
-  // ============================================================
+
+  // ——— SCROLL JOURNEY & ORIENTATION SYSTEM ("Never Lost") ———
+  (function initScrollJourney() {
+    const progressBar = document.getElementById('top-scroll-progress');
+    const dock = document.getElementById('scroll-journey-dock');
+    const fill = document.getElementById('journey-progress-fill');
+    const msbNum = document.getElementById('msb-num');
+    const msbText = document.getElementById('msb-text');
+    const journeyItems = document.querySelectorAll('.journey-item');
+    const navLinks = document.querySelectorAll('.site-nav .nav-link');
+
+    const sectionsMeta = [
+      { id: 'hero', num: '01', title: 'The Firm', navHrefs: ['index.html', '#hero'] },
+      { id: 'about', num: '02', title: 'Our Story', navHrefs: ['about.html'] },
+      { id: 'services', num: '03', title: 'Disciplines', navHrefs: ['services.html'] },
+      { id: 'portfolio-calculators', num: '04', title: 'Calculators', navHrefs: ['#portfolio-calculators', 'calculators.html'] },
+      { id: 'approach', num: '05', title: 'Protocol', navHrefs: ['services.html'] },
+      { id: 'team', num: '06', title: 'Stewards', navHrefs: ['team.html'] },
+      { id: 'testimonials', num: '07', title: 'Perspectives', navHrefs: ['about.html'] },
+      { id: 'portal-hub', num: '08', title: 'Digital Vault', navHrefs: ['services.html'] },
+      { id: 'consult', num: '09', title: 'Consultation', navHrefs: ['contact.html'] }
+    ];
+
+    // Filter to existing elements
+    const sectionEls = sectionsMeta
+      .map(s => ({ ...s, el: document.getElementById(s.id) }))
+      .filter(s => s.el !== null);
+
+    if (sectionEls.length === 0) return;
+
+    let ticking = false;
+
+    function onScroll() {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateScrollJourney();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+
+    function updateScrollJourney() {
+      const scrollY = window.scrollY || window.pageYOffset;
+      const totalH = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPct = totalH > 0 ? Math.min(Math.max(scrollY / totalH, 0), 1) : 0;
+
+      // Update progress bar & dock fill
+      if (progressBar) {
+        progressBar.style.width = (scrollPct * 100) + '%';
+        progressBar.setAttribute('aria-valuenow', Math.round(scrollPct * 100));
+      }
+      if (fill) {
+        fill.style.height = (scrollPct * 100) + '%';
+      }
+
+      // Determine active section (trigger line at 38% viewport height)
+      const triggerY = window.innerHeight * 0.38;
+      let activeItem = sectionEls[0];
+
+      for (let i = 0; i < sectionEls.length; i++) {
+        const rect = sectionEls[i].el.getBoundingClientRect();
+        if (rect.top <= triggerY && rect.bottom > triggerY) {
+          activeItem = sectionEls[i];
+          break;
+        } else if (rect.top <= triggerY) {
+          activeItem = sectionEls[i];
+        }
+      }
+
+      // Update Journey Dock active node
+      if (dock) {
+        journeyItems.forEach(item => {
+          const target = item.getAttribute('data-target');
+          if (target === activeItem.id) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+
+      // Update Mobile Section Badge
+      if (msbNum && msbText) {
+        if (msbNum.textContent !== activeItem.num) {
+          msbNum.textContent = activeItem.num;
+        }
+        if (msbText.textContent !== activeItem.title) {
+          msbText.textContent = activeItem.title;
+        }
+      }
+
+      // Update Desktop Navbar active link
+      if (navLinks.length > 0) {
+        navLinks.forEach(link => {
+          const href = link.getAttribute('href');
+          const isMatch = activeItem.navHrefs.some(nh => href === nh || href.endsWith(nh));
+          if (isMatch) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }
+    }
+
+    // Pip click navigation
+    if (dock) {
+      dock.querySelectorAll('.journey-pip').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const parentItem = btn.closest('.journey-item');
+          if (!parentItem) return;
+          const targetId = parentItem.getAttribute('data-target');
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    updateScrollJourney();
+  })();
   // HERO CRYSTAL RAIN — confined to hero section only
   // Canvas: #hero-canvas (position:absolute inside .hero)
   // Hero has overflow:hidden — particles are clipped naturally.
