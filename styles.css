@@ -1706,7 +1706,7 @@ body.page-light .nav-logo-sub {
 /* ——— INTERACTIVE PORTFOLIO STUDIO & CALCULATORS ——— */
 .portfolio-studio-section {
   background: var(--navy-deep);
-  padding: clamp(3rem, 5vw, 4.5rem) 0;
+  padding: clamp(2rem, 3.5vw, 3rem) 0;
   position: relative;
   overflow: hidden;
   border-top: 1.5px solid rgba(200, 169, 110, 0.45);
@@ -1749,17 +1749,17 @@ body.page-light .nav-logo-sub {
 }
 .studio-header {
   max-width: 680px;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 /* Calc Master Tabs Bar */
 .calc-tabs-outer-wrap {
   width: 100%;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-4);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(200, 169, 110, 0.3) transparent;
-  padding-bottom: 6px;
+  padding-bottom: 2px;
 }
 .calc-tabs-outer-wrap::-webkit-scrollbar {
   height: 5px;
