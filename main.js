@@ -55,21 +55,20 @@
     const progressBar = document.getElementById('top-scroll-progress');
     const dock = document.getElementById('scroll-journey-dock');
     const fill = document.getElementById('journey-progress-fill');
-    const msbNum = document.getElementById('msb-num');
     const msbText = document.getElementById('msb-text');
     const journeyItems = document.querySelectorAll('.journey-item');
     const navLinks = document.querySelectorAll('.site-nav .nav-link');
 
     const sectionsMeta = [
-      { id: 'hero', num: '01', title: 'The Firm', navHrefs: ['index.html', '#hero'] },
-      { id: 'about', num: '02', title: 'Our Story', navHrefs: ['about.html'] },
-      { id: 'services', num: '03', title: 'Disciplines', navHrefs: ['services.html'] },
-      { id: 'portfolio-calculators', num: '04', title: 'Calculators', navHrefs: ['#portfolio-calculators', 'calculators.html'] },
-      { id: 'approach', num: '05', title: 'Protocol', navHrefs: ['services.html'] },
-      { id: 'team', num: '06', title: 'Stewards', navHrefs: ['team.html'] },
-      { id: 'testimonials', num: '07', title: 'Perspectives', navHrefs: ['about.html'] },
-      { id: 'portal-hub', num: '08', title: 'Digital Vault', navHrefs: ['services.html'] },
-      { id: 'consult', num: '09', title: 'Consultation', navHrefs: ['contact.html'] }
+      { id: 'hero', title: 'The Firm', navHrefs: ['index.html', '#hero'] },
+      { id: 'about', title: 'Our Story', navHrefs: ['about.html'] },
+      { id: 'services', title: 'Wealth Disciplines', navHrefs: ['services.html'] },
+      { id: 'portfolio-calculators', title: 'Wealth Calculators', navHrefs: ['#portfolio-calculators', 'calculators.html'] },
+      { id: 'approach', title: 'Advisory Protocol', navHrefs: ['services.html'] },
+      { id: 'team', title: 'Senior Stewards', navHrefs: ['team.html'] },
+      { id: 'testimonials', title: 'Client Perspectives', navHrefs: ['about.html'] },
+      { id: 'portal-hub', title: 'Digital Ecosystem', navHrefs: ['services.html'] },
+      { id: 'consult', title: 'Private Consultation', navHrefs: ['contact.html'] }
     ];
 
     // Filter to existing elements
@@ -132,13 +131,8 @@
       }
 
       // Update Mobile Section Badge
-      if (msbNum && msbText) {
-        if (msbNum.textContent !== activeItem.num) {
-          msbNum.textContent = activeItem.num;
-        }
-        if (msbText.textContent !== activeItem.title) {
-          msbText.textContent = activeItem.title;
-        }
+      if (msbText && msbText.textContent !== activeItem.title) {
+        msbText.textContent = activeItem.title;
       }
 
       // Update Desktop Navbar active link
