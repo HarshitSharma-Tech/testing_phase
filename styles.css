@@ -7007,55 +7007,5 @@ img {
   }
 }
 
-/* ─── Distinct Section Milestones & Badges ─── */
-.chapter-milestone {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  background: rgba(200, 169, 110, 0.08);
-  border: 1px solid rgba(200, 169, 110, 0.28);
-  margin-bottom: var(--space-4);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
-}
-
-.chapter-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--gold-champagne);
-  box-shadow: 0 0 8px rgba(200, 169, 110, 0.8);
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-.chapter-sub {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: #F3DFB0;
-  text-transform: uppercase;
-}
-
-.services-light-theme .chapter-milestone {
-  background: rgba(7, 16, 30, 0.04);
-  border-color: rgba(200, 169, 110, 0.4);
-}
-
-.services-light-theme .chapter-sub {
-  color: #1E293B;
-  font-weight: 700;
-}
-
-/* Center alignment in centered headers */
-.section-header.centered .chapter-milestone,
-.studio-header.centered .chapter-milestone {
-  margin-left: auto;
-  margin-right: auto;
-}
 
 
