@@ -3305,10 +3305,16 @@ body.page-light .nav-logo-sub {
 }
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: var(--space-12);
+  grid-template-columns: 1.8fr 1fr 1.1fr 1fr 1.25fr;
+  gap: clamp(1.5rem, 2.5vw, 2.75rem);
   padding-bottom: var(--space-12);
   border-bottom: 1px solid var(--navy-border);
+}
+.footer-col-company {
+  max-width: 380px;
+}
+.footer-col-company .footer-logo {
+  margin-bottom: var(--space-4);
 }
 .footer-logo {
   display: inline-flex;
@@ -3399,8 +3405,8 @@ body.page-light .nav-logo-sub {
   background: var(--navy-elevated);
   border: 1px solid var(--navy-border);
   border-radius: var(--radius-md);
-  padding: var(--space-5);
-  margin-top: var(--space-5);
+  padding: 14px 16px;
+  margin-top: 14px;
 }
 .footer-amfi-label {
   font-size: var(--text-xs);
@@ -6324,7 +6330,14 @@ body.page-light .nav-logo-sub {
   .team-grid { grid-template-columns: repeat(2, 1fr); }
   .process-steps { grid-template-columns: repeat(2, 1fr); }
   .process-steps::before { display: none; }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-8);
+  }
+  .footer-col-company {
+    grid-column: 1 / -1;
+    max-width: 520px;
+  }
   .testimonials-slider { grid-template-columns: repeat(2, 1fr); }
   .editions-grid { grid-template-columns: repeat(2, 1fr); }
   .portal-hub-grid { grid-template-columns: 1fr; gap: var(--space-8); }
@@ -6661,6 +6674,7 @@ body.page-light .nav-logo-sub {
 
   /* Footer & Compliance */
   .footer-grid { grid-template-columns: 1fr; gap: var(--space-8); width: 100%; }
+  .footer-col-company { grid-column: 1; max-width: 100%; }
   .footer-bottom { flex-direction: column; align-items: flex-start; gap: var(--space-4); width: 100%; }
   .compliance-inner { flex-direction: column; align-items: stretch; width: 100%; }
   .compliance-badge { width: 100%; box-sizing: border-box; }
