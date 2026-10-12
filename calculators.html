@@ -198,9 +198,72 @@
         <div class="calc-tab-panel active" id="sip-basic-tab">
           <div class="studio-grid">
             <div class="studio-controls reveal">
-              <div class="simulator-notice-bar">
-                <svg class="simulator-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span><strong>SIP Compounding Model:</strong> Calculates wealth accumulation through regular monthly disciplined investing.</span>
+              <div class="calc-mode-bar" id="sip-mode-bar">
+                <button type="button" class="calc-mode-btn active" data-mode="real" id="sip-btn-mode-real">
+                  <span class="live-nav-chip"><span class="pulse-dot"></span> Real Mutual Fund NAV Data</span>
+                </button>
+                <button type="button" class="calc-mode-btn" data-mode="hypothetical" id="sip-btn-mode-hypo">
+                  <span>Hypothetical CAGR Model</span>
+                </button>
+              </div>
+
+              <!-- Real Mutual Fund Scheme Selectors -->
+              <div id="sip-real-controls" class="mf-real-controls">
+                <div id="sip-real-error-banner" class="real-error-banner" style="display: none;"></div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Search Any Direct Growth Fund</span>
+                  </div>
+                  <div class="scheme-search-wrap">
+                    <input type="text" id="sip-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Small Cap, Bluechip, Flexi Cap)..." />
+                    <button type="button" id="sip-scheme-search-btn" class="scheme-search-btn">Search</button>
+                  </div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Or Select by AMC</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="sip-amc-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Mutual Fund Scheme (Direct Plan - Growth)</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="sip-scheme-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                  <div class="fund-meta-display" id="sip-fund-meta">
+                    <span class="fund-category-label" id="sip-fund-category">Equity: Flexi Cap</span>
+                    <span class="live-nav-chip" id="sip-fund-nav-chip"><span class="pulse-dot"></span> NAV: Fetching...</span>
+                  </div>
+                  <div class="sim-convention-note">Simulation Convention: If SIP installment date falls on a weekend or market holiday, forward-resolves up to 7 calendar days to next published AMFI NAV.</div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">SIP Monthly Investment Date</span>
+                    <span class="studio-control-val" id="sip-day-val">10th of every month</span>
+                  </div>
+                  <div class="radio-pills-row" id="sip-day-pills">
+                    <button type="button" class="radio-pill-btn active" data-day="1">1st (Factsheet Standard)</button>
+                    <button type="button" class="radio-pill-btn" data-day="5">5th</button>
+                    <button type="button" class="radio-pill-btn" data-day="10">10th</button>
+                    <button type="button" class="radio-pill-btn" data-day="15">15th</button>
+                    <button type="button" class="radio-pill-btn" data-day="20">20th</button>
+                    <button type="button" class="radio-pill-btn" data-day="25">25th</button>
+                  </div>
+                </div>
               </div>
 
               <div class="studio-control-group">
@@ -217,7 +280,7 @@
                 </div>
               </div>
 
-              <div class="studio-control-group">
+              <div class="studio-control-group" id="sip-hypo-rate-group" style="display: none;">
                 <div class="studio-control-label-row">
                   <span class="studio-control-label">Expected Return Rate (p.a.)</span>
                   <span class="studio-control-val" id="sip-basic-rate-val">13.0% p.a.*</span>
@@ -233,15 +296,15 @@
 
               <div class="studio-control-group">
                 <div class="studio-control-label-row">
-                  <span class="studio-control-label">Investment Time Period</span>
-                  <span class="studio-control-val" id="sip-basic-horizon-val">15 Years</span>
+                  <span class="studio-control-label" id="sip-horizon-label">Historical SIP Period</span>
+                  <span class="studio-control-val" id="sip-basic-horizon-val">3 Years</span>
                 </div>
-                <input type="range" class="luxury-range" id="sip-basic-horizon-range" min="1" max="35" step="1" value="15">
-                <div class="range-ticks">
+                <input type="range" class="luxury-range" id="sip-basic-horizon-range" min="1" max="10" step="1" value="3">
+                <div class="range-ticks" id="sip-horizon-ticks">
                   <span>1 Yr</span>
+                  <span>3 Yrs</span>
+                  <span>5 Yrs</span>
                   <span>10 Yrs</span>
-                  <span>20 Yrs</span>
-                  <span>35 Yrs</span>
                 </div>
               </div>
 
@@ -250,7 +313,7 @@
                   Start an Institutional SIP Portfolio
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </a>
-                <span class="studio-cta-note">✦ Curated multi-cap and thematic SIP baskets curated by research principals</span>
+                <span class="studio-cta-note">✦ Curated direct-plan institutional mutual fund portfolios curated by research principals</span>
               </div>
             </div>
 
@@ -259,30 +322,53 @@
                 <div class="analytics-header">
                   <div class="analytics-status">
                     <span class="status-dot"></span>
-                    <span>SIP Compounding Engine</span>
+                    <span id="sip-engine-title">Real NAV Historical Engine</span>
                   </div>
-                  <div class="analytics-badge" id="sip-basic-badge">15 Year Horizon</div>
+                  <div style="text-align: right;">
+                    <div class="analytics-badge" id="sip-basic-badge">3 Year Historical NAV</div>
+                    <div id="sip-period-dates-chip" style="font-size: 11px; color: var(--gold-champagne); margin-top: 4px; font-weight: 500;"></div>
+                  </div>
                 </div>
 
                 <div class="analytics-stat-row">
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Expected Future Wealth <span class="illustrative-pill">Hypothetical</span></span>
-                    <span class="analytics-stat-num highlight" id="sip-basic-total-wealth">₹ 1.48 Cr</span>
+                    <span class="analytics-stat-lbl" id="sip-wealth-label">Current Portfolio Valuation</span>
+                    <span class="analytics-stat-num highlight" id="sip-basic-total-wealth">₹ 0</span>
                   </div>
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Estimated Wealth Gain</span>
-                    <span class="analytics-stat-num highlight" id="sip-basic-total-gain">+₹ 1.03 Cr</span>
+                    <span class="analytics-stat-lbl" id="sip-gain-label">Wealth Gain / Alpha</span>
+                    <span class="analytics-stat-num highlight" id="sip-basic-total-gain">+₹ 0</span>
                   </div>
                 </div>
 
-                <div class="analytics-stat-row" style="margin-bottom: var(--space-6);">
+                <div class="analytics-stat-row" style="margin-bottom: var(--space-4);">
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Total Amount Invested</span>
-                    <span class="analytics-stat-num" id="sip-basic-total-invested" style="font-size: var(--text-xl);">₹ 45.00 Lakhs</span>
+                    <span class="analytics-stat-lbl">Total Capital Invested</span>
+                    <span class="analytics-stat-num" id="sip-basic-total-invested" style="font-size: var(--text-xl);">₹ 0</span>
                   </div>
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Compounding Multiplier</span>
-                    <span class="analytics-stat-num" id="sip-basic-multiplier" style="font-size: var(--text-xl); color: #10b981;">3.29x</span>
+                    <span class="analytics-stat-lbl" id="sip-stat4-lbl">Growth Multiplier</span>
+                    <span class="analytics-stat-num" id="sip-basic-multiplier" style="font-size: var(--text-xl); color: #10b981;">0.00x</span>
+                  </div>
+                </div>
+
+                <!-- Real Data Specific Metrics -->
+                <div class="real-stat-grid" id="sip-real-metrics-grid">
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Accumulated Units</span>
+                    <span class="real-stat-box-val" id="sip-units-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Latest Daily NAV</span>
+                    <span class="real-stat-box-val highlight" id="sip-nav-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Absolute Return</span>
+                    <span class="real-stat-box-val green" id="sip-abs-return-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Annualized Return (CAGR)</span>
+                    <span class="real-stat-box-val green" id="sip-cagr-return-val">—</span>
                   </div>
                 </div>
 
@@ -313,9 +399,77 @@
         <div class="calc-tab-panel" id="lumpsum-sip-tab">
           <div class="studio-grid">
             <div class="studio-controls">
-              <div class="simulator-notice-bar">
+              <div class="calc-mode-bar" id="ls-mode-bar">
+                <button type="button" class="calc-mode-btn" data-mode="real" id="ls-btn-mode-real">
+                  <span class="live-nav-chip"><span class="pulse-dot"></span> Real Mutual Fund NAV Data</span>
+                </button>
+                <button type="button" class="calc-mode-btn active" data-mode="hypothetical" id="ls-btn-mode-hypo">
+                  <span>Hypothetical CAGR Model</span>
+                </button>
+              </div>
+
+              <!-- Real Historical Controls for Lumpsum & SIP -->
+              <div id="ls-real-controls" class="mf-real-controls" style="display: none;">
+                <div id="ls-real-error-banner" class="real-error-banner" style="display: none;"></div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Search Any Direct Growth Fund</span>
+                  </div>
+                  <div class="scheme-search-wrap">
+                    <input type="text" id="ls-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Flexi Cap, Large Cap, Bluechip)..." />
+                    <button type="button" id="ls-scheme-search-btn" class="scheme-search-btn">Search</button>
+                  </div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Or Select by AMC</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="ls-amc-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Mutual Fund Scheme (Direct Plan - Growth)</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="ls-scheme-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                  <div class="fund-meta-display" id="ls-fund-meta">
+                    <span class="fund-category-label" id="ls-fund-category">Equity: Flexi Cap</span>
+                    <span class="live-nav-chip" id="ls-fund-nav-chip"><span class="pulse-dot"></span> NAV: Fetching...</span>
+                  </div>
+                  <div class="sim-convention-note">Simulation Convention: Initial lumpsum executed on period start date NAV. Monthly SIP installments resolve forward to next published business day NAV if falling on holiday/weekend.</div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">SIP Monthly Investment Date</span>
+                    <span class="studio-control-val" id="ls-day-val">1st of every month</span>
+                  </div>
+                  <div class="radio-pills-row" id="ls-day-pills">
+                    <button type="button" class="radio-pill-btn active" data-day="1">1st (Factsheet Standard)</button>
+                    <button type="button" class="radio-pill-btn" data-day="5">5th</button>
+                    <button type="button" class="radio-pill-btn" data-day="10">10th</button>
+                    <button type="button" class="radio-pill-btn" data-day="15">15th</button>
+                    <button type="button" class="radio-pill-btn" data-day="20">20th</button>
+                    <button type="button" class="radio-pill-btn" data-day="25">25th</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="simulator-notice-bar" id="ls-notice-bar">
                 <svg class="simulator-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span><strong>Hybrid Wealth Engine:</strong> Models initial one-time capital compounded alongside recurring monthly SIP additions.</span>
+                <span id="ls-notice-text"><strong>Hybrid Wealth Engine:</strong> Models initial one-time capital compounded alongside recurring monthly SIP additions.</span>
               </div>
 
               <div class="studio-control-group">
@@ -323,9 +477,9 @@
                   <span class="studio-control-label">Initial One-Time Lumpsum</span>
                   <span class="studio-control-val" id="ls-lump-val">₹ 5,00,000</span>
                 </div>
-                <input type="range" class="luxury-range" id="ls-lump-range" min="10000" max="5000000" step="10000" value="500000">
+                <input type="range" class="luxury-range" id="ls-lump-range" min="0" max="5000000" step="10000" value="500000">
                 <div class="range-ticks">
-                  <span>₹10,000</span>
+                  <span>₹0</span>
                   <span>₹5 Lakhs</span>
                   <span>₹25 Lakhs</span>
                   <span>₹50 Lakhs</span>
@@ -337,9 +491,9 @@
                   <span class="studio-control-label">Monthly SIP Addition</span>
                   <span class="studio-control-val" id="ls-sip-val">₹ 20,000 / month</span>
                 </div>
-                <input type="range" class="luxury-range" id="ls-sip-range" min="1000" max="200000" step="1000" value="20000">
+                <input type="range" class="luxury-range" id="ls-sip-range" min="0" max="200000" step="1000" value="20000">
                 <div class="range-ticks">
-                  <span>₹1,000</span>
+                  <span>₹0</span>
                   <span>₹20,000</span>
                   <span>₹1 Lakh</span>
                   <span>₹2 Lakhs</span>
@@ -348,11 +502,11 @@
 
               <div class="studio-control-group">
                 <div class="studio-control-label-row">
-                  <span class="studio-control-label">Investment Duration</span>
+                  <span class="studio-control-label" id="ls-horizon-label">Investment Duration</span>
                   <span class="studio-control-val" id="ls-horizon-val">10 Years</span>
                 </div>
                 <input type="range" class="luxury-range" id="ls-horizon-range" min="1" max="30" step="1" value="10">
-                <div class="range-ticks">
+                <div class="range-ticks" id="ls-horizon-ticks">
                   <span>1 Yr</span>
                   <span>10 Yrs</span>
                   <span>20 Yrs</span>
@@ -360,7 +514,7 @@
                 </div>
               </div>
 
-              <div class="studio-control-group">
+              <div class="studio-control-group" id="ls-rate-group">
                 <div class="studio-control-label-row">
                   <span class="studio-control-label">Expected Return Rate (CAGR)</span>
                   <span class="studio-control-val" id="ls-rate-val">13.0% p.a.*</span>
@@ -388,30 +542,69 @@
                 <div class="analytics-header">
                   <div class="analytics-status">
                     <span class="status-dot"></span>
-                    <span>Hybrid Compounding Model</span>
+                    <span id="ls-engine-title">Hybrid Compounding Model</span>
                   </div>
-                  <div class="analytics-badge" id="ls-badge">Combined Portfolio</div>
+                  <div style="text-align: right;">
+                    <div class="analytics-badge" id="ls-badge">Combined Portfolio</div>
+                    <div id="ls-period-dates-chip" style="font-size: 11px; color: var(--gold-champagne); margin-top: 4px; font-weight: 500;"></div>
+                  </div>
                 </div>
 
                 <div class="analytics-stat-row">
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Total Future Value <span class="illustrative-pill">Hypothetical</span></span>
+                    <span class="analytics-stat-lbl" id="ls-wealth-lbl">Total Future Value <span class="illustrative-pill" id="ls-wealth-pill">Hypothetical</span></span>
                     <span class="analytics-stat-num highlight" id="ls-total-wealth">₹ 68.85 Lakhs</span>
                   </div>
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Estimated Total Gain</span>
+                    <span class="analytics-stat-lbl" id="ls-gain-lbl">Estimated Total Gain</span>
                     <span class="analytics-stat-num highlight" id="ls-total-gain">+₹ 39.85 Lakhs</span>
                   </div>
                 </div>
 
-                <div class="analytics-stat-row" style="margin-bottom: var(--space-6);">
+                <div class="analytics-stat-row" style="margin-bottom: var(--space-4);">
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Total Principal Outlay</span>
+                    <span class="analytics-stat-lbl" id="ls-invested-lbl">Total Principal Outlay</span>
                     <span class="analytics-stat-num" id="ls-total-invested" style="font-size: var(--text-xl);">₹ 29.00 Lakhs</span>
                   </div>
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Lumpsum Yield Contribution</span>
+                    <span class="analytics-stat-lbl" id="ls-yield-lbl">Lumpsum Yield Contribution</span>
                     <span class="analytics-stat-num" id="ls-lump-grow-val" style="font-size: var(--text-xl); color: #10b981;">₹ 16.97 Lakhs</span>
+                  </div>
+                </div>
+
+                <!-- Real Data Specific Metrics Grid for Lumpsum & SIP -->
+                <div class="real-stat-grid" id="ls-real-metrics-grid" style="display: none;">
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Initial Lumpsum Units</span>
+                    <span class="real-stat-box-val" id="ls-real-lump-units">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">SIP Units Accumulated</span>
+                    <span class="real-stat-box-val" id="ls-real-sip-units">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Total Accumulated Units</span>
+                    <span class="real-stat-box-val highlight" id="ls-real-total-units">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Latest Daily NAV</span>
+                    <span class="real-stat-box-val highlight" id="ls-real-nav-display">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Absolute Return</span>
+                    <span class="real-stat-box-val green" id="ls-real-abs-return">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Annualized Return (XIRR)</span>
+                    <span class="real-stat-box-val green" id="ls-real-xirr">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Total SIP Outlay</span>
+                    <span class="real-stat-box-val" id="ls-real-sip-outlay">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Transactions Executed</span>
+                    <span class="real-stat-box-val" id="ls-real-tx-count">—</span>
                   </div>
                 </div>
 
@@ -430,7 +623,7 @@
                   </div>
                 </div>
 
-                <div class="simulator-disclaimer-box">
+                <div class="simulator-disclaimer-box" id="ls-disclaimer-box">
                   <strong>*Statutory Disclaimer:</strong> Lumpsum and SIP compounding simulations assume regular annual CAGR. Mutual Fund investments are subject to market risks; read all scheme documents.
                 </div>
               </div>
@@ -442,19 +635,87 @@
         <div class="calc-tab-panel" id="sip-stepup-tab">
           <div class="studio-grid">
             <div class="studio-controls">
-              <div class="simulator-notice-bar">
+              <div class="calc-mode-bar" id="stepup-mode-bar">
+                <button type="button" class="calc-mode-btn" data-mode="real" id="stepup-btn-mode-real">
+                  <span class="live-nav-chip"><span class="pulse-dot"></span> Real Mutual Fund NAV Data</span>
+                </button>
+                <button type="button" class="calc-mode-btn active" data-mode="hypothetical" id="stepup-btn-mode-hypo">
+                  <span>Hypothetical CAGR Model</span>
+                </button>
+              </div>
+
+              <!-- Real Historical Controls for Step-Up SIP -->
+              <div id="stepup-real-controls" class="mf-real-controls" style="display: none;">
+                <div id="stepup-real-error-banner" class="real-error-banner" style="display: none;"></div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Search Any Direct Growth Fund</span>
+                  </div>
+                  <div class="scheme-search-wrap">
+                    <input type="text" id="stepup-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Mid Cap, Small Cap, Flexi Cap)..." />
+                    <button type="button" id="stepup-scheme-search-btn" class="scheme-search-btn">Search</button>
+                  </div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Or Select by AMC</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="stepup-amc-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Mutual Fund Scheme (Direct Plan - Growth)</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="stepup-scheme-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                  <div class="fund-meta-display" id="stepup-fund-meta">
+                    <span class="fund-category-label" id="stepup-fund-category">Equity: Flexi Cap</span>
+                    <span class="live-nav-chip" id="stepup-fund-nav-chip"><span class="pulse-dot"></span> NAV: Fetching...</span>
+                  </div>
+                  <div class="sim-convention-note">Simulation Convention: If SIP installment date falls on a weekend or holiday, forward-resolves up to 7 calendar days to next published AMFI NAV.</div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">SIP Monthly Investment Date</span>
+                    <span class="studio-control-val" id="stepup-day-val">1st of every month</span>
+                  </div>
+                  <div class="radio-pills-row" id="stepup-day-pills">
+                    <button type="button" class="radio-pill-btn active" data-day="1">1st (Factsheet Standard)</button>
+                    <button type="button" class="radio-pill-btn" data-day="5">5th</button>
+                    <button type="button" class="radio-pill-btn" data-day="10">10th</button>
+                    <button type="button" class="radio-pill-btn" data-day="15">15th</button>
+                    <button type="button" class="radio-pill-btn" data-day="20">20th</button>
+                    <button type="button" class="radio-pill-btn" data-day="25">25th</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="simulator-notice-bar" id="stepup-notice-bar">
                 <svg class="simulator-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span><strong>Step-Up Compounding:</strong> Demonstrates the immense wealth accelerator of increasing your SIP annually with salary increments.</span>
+                <span id="stepup-notice-text"><strong>Step-Up Compounding:</strong> Demonstrates the immense wealth accelerator of increasing your SIP annually with salary increments.</span>
               </div>
 
               <div class="studio-control-group">
                 <div class="studio-control-label-row">
-                  <span class="studio-control-label">Initial Monthly Investment</span>
+                  <span class="studio-control-label" id="stepup-monthly-lbl">Initial Monthly Investment</span>
                   <span class="studio-control-val" id="sip-monthly-val">₹ 50,000 / month</span>
                 </div>
-                <input type="range" class="luxury-range" id="sip-monthly-range" min="5000" max="500000" step="5000" value="50000">
+                <input type="range" class="luxury-range" id="sip-monthly-range" min="1000" max="500000" step="1000" value="50000">
                 <div class="range-ticks">
-                  <span>₹5,000</span>
+                  <span>₹1,000</span>
                   <span>₹50,000</span>
                   <span>₹2.5 Lakhs</span>
                   <span>₹5 Lakhs</span>
@@ -477,19 +738,19 @@
 
               <div class="studio-control-group">
                 <div class="studio-control-label-row">
-                  <span class="studio-control-label">Investment Duration</span>
+                  <span class="studio-control-label" id="stepup-horizon-label">Investment Duration</span>
                   <span class="studio-control-val" id="sip-horizon-val">15 Years</span>
                 </div>
-                <input type="range" class="luxury-range" id="sip-horizon-range" min="3" max="30" step="1" value="15">
-                <div class="range-ticks">
-                  <span>3 Yrs</span>
+                <input type="range" class="luxury-range" id="sip-horizon-range" min="1" max="30" step="1" value="15">
+                <div class="range-ticks" id="stepup-horizon-ticks">
+                  <span>1 Yr</span>
                   <span>10 Yrs</span>
                   <span>20 Yrs</span>
                   <span>30 Yrs</span>
                 </div>
               </div>
 
-              <div class="studio-control-group">
+              <div class="studio-control-group" id="stepup-rate-group">
                 <div class="studio-control-label-row">
                   <span class="studio-control-label">Expected Annual Return (CAGR)</span>
                   <span class="studio-control-val" id="sip-rate-val">13% p.a.*</span>
@@ -517,30 +778,61 @@
                 <div class="analytics-header">
                   <div class="analytics-status">
                     <span class="status-dot"></span>
-                    <span>Step-Up Compounding Engine</span>
+                    <span id="stepup-engine-title">Step-Up Compounding Engine</span>
                   </div>
-                  <div class="analytics-badge" id="sip-badge">+10% Annual Step-Up</div>
+                  <div style="text-align: right;">
+                    <div class="analytics-badge" id="sip-badge">+10% Annual Step-Up</div>
+                    <div id="stepup-period-dates-chip" style="font-size: 11px; color: var(--gold-champagne); margin-top: 4px; font-weight: 500;"></div>
+                  </div>
                 </div>
 
                 <div class="analytics-stat-row">
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Expected Future Corpus <span class="illustrative-pill">Hypothetical</span></span>
+                    <span class="analytics-stat-lbl" id="stepup-wealth-lbl">Expected Future Corpus <span class="illustrative-pill" id="stepup-wealth-pill">Hypothetical</span></span>
                     <span class="analytics-stat-num highlight" id="sip-total-wealth">₹ 3.82 Cr</span>
                   </div>
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Estimated Wealth Gain</span>
+                    <span class="analytics-stat-lbl" id="stepup-gain-lbl">Estimated Wealth Gain</span>
                     <span class="analytics-stat-num highlight" id="sip-total-gain">+₹ 1.91 Cr</span>
                   </div>
                 </div>
 
-                <div class="analytics-stat-row" style="margin-bottom: var(--space-6);">
+                <div class="analytics-stat-row" style="margin-bottom: var(--space-4);">
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Total Amount Invested</span>
+                    <span class="analytics-stat-lbl" id="stepup-invested-lbl">Total Amount Invested</span>
                     <span class="analytics-stat-num" id="sip-total-invested" style="font-size: var(--text-xl);">₹ 1.91 Cr</span>
                   </div>
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Step-Up Advantage vs Flat</span>
+                    <span class="analytics-stat-lbl" id="stepup-stat4-lbl">Step-Up Advantage vs Flat</span>
                     <span class="analytics-stat-num" id="sip-advantage" style="font-size: var(--text-xl); color: #10b981;">+₹ 1.25 Cr</span>
+                  </div>
+                </div>
+
+                <!-- Real Data Specific Metrics Grid for Step-Up SIP -->
+                <div class="real-stat-grid" id="stepup-real-metrics-grid" style="display: none;">
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Accumulated Units</span>
+                    <span class="real-stat-box-val highlight" id="stepup-real-units">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Latest Daily NAV</span>
+                    <span class="real-stat-box-val highlight" id="stepup-real-nav-display">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Absolute Return</span>
+                    <span class="real-stat-box-val green" id="stepup-real-abs-return">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Annualized Return (XIRR)</span>
+                    <span class="real-stat-box-val green" id="stepup-real-xirr">—</span>
+                  </div>
+                  <div class="real-stat-box" style="grid-column: span 2;">
+                    <span class="real-stat-box-lbl">Annual Contribution Escalation Schedule</span>
+                    <div id="stepup-real-schedule-list" style="font-size: 12px; color: var(--gold-champagne); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 8px;">—</div>
+                  </div>
+                  <div class="real-stat-box" style="grid-column: span 2;">
+                    <span class="real-stat-box-lbl">Transactions Executed</span>
+                    <span class="real-stat-box-val" id="stepup-real-tx-count" style="font-size: 13px; color: var(--slate-light);">—</span>
                   </div>
                 </div>
 
@@ -559,7 +851,7 @@
                   </div>
                 </div>
 
-                <div class="simulator-disclaimer-box">
+                <div class="simulator-disclaimer-box" id="stepup-disclaimer-box">
                   <strong>*Statutory Disclosure:</strong> Step-Up SIP projections calculate annual contribution increments with constant CAGR compounding for illustrative modeling. Mutual Fund investments are subject to market risks.
                 </div>
               </div>
@@ -567,7 +859,361 @@
           </div>
         </div>
 
-        <!-- ═══ TAB 4: SIP - COST OF DELAY ═══ -->
+        <!-- ═══ TAB 4: STP CALCULATOR ═══ -->
+        <div class="calc-tab-panel" id="stp-calc-tab">
+          <div class="studio-grid">
+            <div class="studio-controls">
+              <div class="calc-mode-bar" id="stp-mode-bar">
+                <button type="button" class="calc-mode-btn active" data-mode="real" id="stp-btn-mode-real">
+                  <span class="live-nav-chip"><span class="pulse-dot"></span> Real Mutual Fund NAV Data</span>
+                </button>
+                <button type="button" class="calc-mode-btn" data-mode="hypothetical" id="stp-btn-mode-hypo">
+                  <span>Hypothetical Model</span>
+                </button>
+              </div>
+
+              <!-- Real STP Controls -->
+              <div id="stp-real-controls" class="mf-real-controls">
+                <div id="stp-real-error-banner" class="real-error-banner" style="display: none;"></div>
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Source Fund (Liquid / Debt Reserve)</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="stp-source-scheme-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                  <div class="fund-meta-display">
+                    <span class="fund-category-label">Debt / Liquid Reserve Fund</span>
+                    <span class="live-nav-chip" id="stp-source-nav-chip"><span class="pulse-dot"></span> NAV: Fetching...</span>
+                  </div>
+                </div>
+
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Target Fund (Equity Growth Fund)</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="stp-target-scheme-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                  <div class="fund-meta-display">
+                    <span class="fund-category-label">Equity Growth Accumulator</span>
+                    <span class="live-nav-chip" id="stp-target-nav-chip"><span class="pulse-dot"></span> NAV: Fetching...</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="studio-control-group">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Source Fund Corpus (Debt / Liquid)</span>
+                  <span class="studio-control-val" id="stp-source-val">₹ 25,00,000</span>
+                </div>
+                <input type="range" class="luxury-range" id="stp-source-range" min="100000" max="10000000" step="50000" value="2500000">
+                <div class="range-ticks">
+                  <span>₹1 Lakh</span>
+                  <span>₹25 Lakhs</span>
+                  <span>₹50 Lakhs</span>
+                  <span>₹1 Crore</span>
+                </div>
+              </div>
+
+              <div class="studio-control-group">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Monthly Transfer to Equity</span>
+                  <span class="studio-control-val" id="stp-transfer-val">₹ 50,000 / month</span>
+                </div>
+                <input type="range" class="luxury-range" id="stp-transfer-range" min="5000" max="250000" step="5000" value="50000">
+                <div class="range-ticks">
+                  <span>₹5,000</span>
+                  <span>₹50,000</span>
+                  <span>₹1.5 Lakhs</span>
+                  <span>₹2.5 Lakhs</span>
+                </div>
+              </div>
+
+              <div class="studio-control-group">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Transfer Duration</span>
+                  <span class="studio-control-val" id="stp-horizon-val">4 Years</span>
+                </div>
+                <input type="range" class="luxury-range" id="stp-horizon-range" min="1" max="10" step="1" value="4">
+                <div class="range-ticks">
+                  <span>1 Yr</span>
+                  <span>3 Yrs</span>
+                  <span>6 Yrs</span>
+                  <span>10 Yrs</span>
+                </div>
+              </div>
+
+              <div class="studio-control-group" id="stp-hypo-rates-group" style="display: none;">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Source (Debt) / Target (Equity) Returns</span>
+                  <span class="studio-control-val" id="stp-rates-val">6.5% / 13.5% p.a.*</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;">
+                  <div>
+                    <span style="font-size: 11px; color: var(--slate-muted);">Debt Return</span>
+                    <input type="range" class="luxury-range" id="stp-source-rate-range" min="4" max="9" step="0.5" value="6.5">
+                  </div>
+                  <div>
+                    <span style="font-size: 11px; color: var(--slate-muted);">Equity Return</span>
+                    <input type="range" class="luxury-range" id="stp-target-rate-range" min="9" max="18" step="0.5" value="13.5">
+                  </div>
+                </div>
+              </div>
+
+              <div class="studio-cta-wrap">
+                <a href="contact.html?service=portfolio&tool=stp-calculator" class="btn btn-primary" id="btn-stp-consult">
+                  Structure STP Deployment Strategy
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <span class="studio-cta-note">✦ Eliminates market peak risk while earning superior debt yields on undistributed reserves</span>
+              </div>
+            </div>
+
+            <div class="studio-analytics">
+              <div class="analytics-card">
+                <div class="analytics-header">
+                  <div class="analytics-status">
+                    <span class="status-dot"></span>
+                    <span>STP Transfer Dynamics</span>
+                  </div>
+                  <div class="analytics-badge" id="stp-badge">Staggered Asset Allocation</div>
+                </div>
+
+                <div class="analytics-stat-row">
+                  <div class="analytics-stat">
+                    <span class="analytics-stat-lbl">Total Combined Wealth <span class="illustrative-pill">Hypothetical</span></span>
+                    <span class="analytics-stat-num highlight" id="stp-total-wealth">₹ 35.80 Lakhs</span>
+                  </div>
+                  <div class="analytics-stat">
+                    <span class="analytics-stat-lbl">Total Net Gain</span>
+                    <span class="analytics-stat-num highlight" id="stp-net-gain">+₹ 10.80 Lakhs</span>
+                  </div>
+                </div>
+
+                <div class="analytics-stat-row" style="margin-bottom: var(--space-4);">
+                  <div class="analytics-stat">
+                    <span class="analytics-stat-lbl">Equity (Target) Corpus</span>
+                    <span class="analytics-stat-num" id="stp-target-wealth" style="font-size: var(--text-xl); color: #38bdf8;">₹ 0</span>
+                  </div>
+                  <div class="analytics-stat">
+                    <span class="analytics-stat-lbl">Remaining Debt Source</span>
+                    <span class="analytics-stat-num" id="stp-source-rem" style="font-size: var(--text-xl); color: #f59e0b;">₹ 0</span>
+                  </div>
+                </div>
+
+                <!-- Real STP Stat Grid -->
+                <div class="real-stat-grid" id="stp-real-metrics-grid">
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Equity Units Bought</span>
+                    <span class="real-stat-box-val highlight" id="stp-target-units-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Debt Units Left</span>
+                    <span class="real-stat-box-val" id="stp-source-units-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Absolute Wealth Gain</span>
+                    <span class="real-stat-box-val green" id="stp-abs-gain-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Transfers Executed</span>
+                    <span class="real-stat-box-val" id="stp-transfers-count-val">—</span>
+                  </div>
+                </div>
+
+                <div class="allocation-section">
+                  <div class="allocation-title-row">
+                    <span class="allocation-lbl">Post-STP Asset Mix</span>
+                    <span class="allocation-total" id="stp-ratio-lbl">88% Equity : 12% Debt</span>
+                  </div>
+                  <div class="calc-breakdown-bar">
+                    <div class="breakdown-slice" id="stp-bar-target" style="width: 88%; background: linear-gradient(90deg, #38bdf8, #0ea5e9);" title="Equity Transferred"></div>
+                    <div class="breakdown-slice" id="stp-bar-source" style="width: 12%; background: linear-gradient(90deg, #f59e0b, #d97706);" title="Debt Remaining"></div>
+                  </div>
+                  <div class="allocation-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span>Equity Target (<span id="stp-leg-target">₹31.40 Lakhs</span>)</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Debt Reserve (<span id="stp-leg-source">₹4.40 Lakhs</span>)</div>
+                  </div>
+                </div>
+
+                <div class="simulator-disclaimer-box">
+                  <strong>*STP Disclosure:</strong> Calculations assume fixed periodic transfers and constant returns. Actual fund NAVs fluctuate daily.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 5: SWP CALCULATOR ═══ -->
+        <div class="calc-tab-panel" id="swp-calc-tab">
+          <div class="studio-grid">
+            <div class="studio-controls">
+              <div class="calc-mode-bar" id="swp-mode-bar">
+                <button type="button" class="calc-mode-btn active" data-mode="real" id="swp-btn-mode-real">
+                  <span class="live-nav-chip"><span class="pulse-dot"></span> Real Mutual Fund NAV Data</span>
+                </button>
+                <button type="button" class="calc-mode-btn" data-mode="hypothetical" id="swp-btn-mode-hypo">
+                  <span>Hypothetical Model</span>
+                </button>
+              </div>
+
+              <!-- Real SWP Controls -->
+              <div id="swp-real-controls" class="mf-real-controls">
+                <div id="swp-real-error-banner" class="real-error-banner" style="display: none;"></div>
+                <div class="studio-control-group">
+                  <div class="studio-control-label-row">
+                    <span class="studio-control-label">Select Hybrid / Equity Fund</span>
+                  </div>
+                  <div class="luxury-select-wrap">
+                    <select class="luxury-select" id="swp-scheme-select">
+                      <!-- Populated via JS -->
+                    </select>
+                    <span class="select-chevron">▾</span>
+                  </div>
+                  <div class="fund-meta-display">
+                    <span class="fund-category-label" id="swp-fund-category">Hybrid: Dynamic Asset Allocation</span>
+                    <span class="live-nav-chip" id="swp-fund-nav-chip"><span class="pulse-dot"></span> NAV: Fetching...</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="studio-control-group">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Total Investment Corpus</span>
+                  <span class="studio-control-val" id="swp-corpus-val">₹ 3,00,00,000 (3.0 Cr)</span>
+                </div>
+                <input type="range" class="luxury-range" id="swp-corpus-range" min="25" max="1000" step="5" value="300">
+                <div class="range-ticks">
+                  <span>₹25 Lakhs</span>
+                  <span>₹1.5 Crore</span>
+                  <span>₹5 Crore</span>
+                  <span>₹10+ Crore</span>
+                </div>
+              </div>
+
+              <div class="studio-control-group">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Monthly Withdrawal (Cash Flow)</span>
+                  <span class="studio-control-val" id="swp-withdraw-val">₹ 1,50,000 / month</span>
+                </div>
+                <input type="range" class="luxury-range" id="swp-withdraw-range" min="10000" max="600000" step="5000" value="150000">
+                <div class="range-ticks">
+                  <span>₹10,000</span>
+                  <span>₹1.5 Lakhs</span>
+                  <span>₹3.5 Lakhs</span>
+                  <span>₹6 Lakhs</span>
+                </div>
+              </div>
+
+              <div class="studio-control-group">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Withdrawal Horizon</span>
+                  <span class="studio-control-val" id="swp-horizon-val">20 Years</span>
+                </div>
+                <input type="range" class="luxury-range" id="swp-horizon-range" min="5" max="35" step="1" value="20">
+                <div class="range-ticks">
+                  <span>5 Yrs</span>
+                  <span>15 Yrs</span>
+                  <span>25 Yrs</span>
+                  <span>35 Yrs</span>
+                </div>
+              </div>
+
+              <div class="studio-control-group" id="swp-hypo-rate-group" style="display: none;">
+                <div class="studio-control-label-row">
+                  <span class="studio-control-label">Expected Portfolio Return (CAGR)</span>
+                  <span class="studio-control-val" id="swp-rate-val">9.0% p.a.*</span>
+                </div>
+                <input type="range" class="luxury-range" id="swp-rate-range" min="6" max="14" step="0.5" value="9">
+                <div class="range-ticks">
+                  <span>6% (Conservative)</span>
+                  <span>9% (Balanced)</span>
+                  <span>12%</span>
+                  <span>14% (Growth)</span>
+                </div>
+              </div>
+
+              <div class="studio-cta-wrap">
+                <a href="contact.html?service=tax&tool=swp-retirement" class="btn btn-primary" id="btn-swp-consult">
+                  Structure Tax-Efficient SWP Plan
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <span class="studio-cta-note">✦ Designed to optimize LTCG tax brackets and generate steady monthly income</span>
+              </div>
+            </div>
+
+            <div class="studio-analytics">
+              <div class="analytics-card">
+                <div class="analytics-header">
+                  <div class="analytics-status">
+                    <span class="status-dot"></span>
+                    <span>Retirement Longevity Model</span>
+                  </div>
+                  <div class="swp-status-pill sustainable" id="swp-health-badge">✦ Highly Sustainable</div>
+                </div>
+
+                <div class="analytics-stat-row" style="margin-bottom: var(--space-4);">
+                  <div class="analytics-stat">
+                    <span class="analytics-stat-lbl">Total Cash Withdrawn</span>
+                    <span class="analytics-stat-num" id="swp-total-withdrawn" style="color:#10b981;">₹ 0</span>
+                  </div>
+                  <div class="analytics-stat">
+                    <span class="analytics-stat-lbl">Final Remaining Corpus</span>
+                    <span class="analytics-stat-num highlight" id="swp-final-balance">₹ 0</span>
+                  </div>
+                </div>
+
+                <!-- Real SWP Stat Grid -->
+                <div class="real-stat-grid" id="swp-real-metrics-grid">
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Units Remaining</span>
+                    <span class="real-stat-box-val highlight" id="swp-units-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Latest Fund NAV</span>
+                    <span class="real-stat-box-val" id="swp-nav-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Total Wealth Created</span>
+                    <span class="real-stat-box-val green" id="swp-net-benefit-val">—</span>
+                  </div>
+                  <div class="real-stat-box">
+                    <span class="real-stat-box-lbl">Monthly Cashflows Paid</span>
+                    <span class="real-stat-box-val" id="swp-payouts-count-val">—</span>
+                  </div>
+                </div>
+
+                <div class="allocation-section">
+                  <div class="allocation-title-row">
+                    <span class="allocation-lbl">Corpus Cash Flow Dynamics</span>
+                    <span class="allocation-total" id="swp-sustain-text">Corpus Grows while Supporting Withdrawals</span>
+                  </div>
+                  <div class="calc-breakdown-bar">
+                    <div class="breakdown-slice withdrawn" id="swp-bar-withdrawn" style="width: 45%;" title="Total Withdrawn"></div>
+                    <div class="breakdown-slice remaining" id="swp-bar-remaining" style="width: 55%;" title="Remaining Legacy Balance"></div>
+                  </div>
+                  <div class="allocation-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span>Total Withdrawn (<span id="swp-leg-withdrawn">₹3.60 Cr</span>)</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;"></span>Remaining Capital (<span id="swp-leg-balance">₹4.12 Cr</span>)</div>
+                  </div>
+                </div>
+
+                <div class="simulator-disclaimer-box">
+                  <strong>*SWP Projection Notice:</strong> Calculations assume smooth compounding and regular monthly payouts. Real returns fluctuate with market cycles and taxes.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB 6: SIP - COST OF DELAY ═══ -->
         <div class="calc-tab-panel" id="sip-delay-tab">
           <div class="studio-grid">
             <div class="studio-controls">
@@ -696,7 +1342,7 @@
           </div>
         </div>
 
-        <!-- ═══ TAB 5: SIP TENURE CALCULATOR ═══ -->
+        <!-- ═══ TAB 7: SIP TENURE CALCULATOR ═══ -->
         <div class="calc-tab-panel" id="sip-tenure-tab">
           <div class="studio-grid">
             <div class="studio-controls">
@@ -805,256 +1451,6 @@
 
                 <div class="simulator-disclaimer-box">
                   <strong>*Formula Disclosure:</strong> Derived mathematically using annuity logarithmic equation for future value compounding with periodic monthly payments.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ TAB 6: STP CALCULATOR ═══ -->
-        <div class="calc-tab-panel" id="stp-calc-tab">
-          <div class="studio-grid">
-            <div class="studio-controls">
-              <div class="simulator-notice-bar">
-                <svg class="simulator-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span><strong>Systematic Transfer Plan:</strong> Models systematically moving capital from a liquid/debt source fund into high-growth equity funds.</span>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Source Fund Corpus (Debt / Liquid)</span>
-                  <span class="studio-control-val" id="stp-source-val">₹ 25,00,000</span>
-                </div>
-                <input type="range" class="luxury-range" id="stp-source-range" min="100000" max="10000000" step="50000" value="2500000">
-                <div class="range-ticks">
-                  <span>₹1 Lakh</span>
-                  <span>₹25 Lakhs</span>
-                  <span>₹50 Lakhs</span>
-                  <span>₹1 Crore</span>
-                </div>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Monthly Transfer to Equity</span>
-                  <span class="studio-control-val" id="stp-transfer-val">₹ 50,000 / month</span>
-                </div>
-                <input type="range" class="luxury-range" id="stp-transfer-range" min="5000" max="250000" step="5000" value="50000">
-                <div class="range-ticks">
-                  <span>₹5,000</span>
-                  <span>₹50,000</span>
-                  <span>₹1.5 Lakhs</span>
-                  <span>₹2.5 Lakhs</span>
-                </div>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Transfer Duration</span>
-                  <span class="studio-control-val" id="stp-horizon-val">4 Years</span>
-                </div>
-                <input type="range" class="luxury-range" id="stp-horizon-range" min="1" max="10" step="1" value="4">
-                <div class="range-ticks">
-                  <span>1 Yr</span>
-                  <span>3 Yrs</span>
-                  <span>6 Yrs</span>
-                  <span>10 Yrs</span>
-                </div>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Source (Debt) / Target (Equity) Returns</span>
-                  <span class="studio-control-val" id="stp-rates-val">6.5% / 13.5% p.a.*</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;">
-                  <div>
-                    <span style="font-size: 11px; color: var(--slate-muted);">Debt Return</span>
-                    <input type="range" class="luxury-range" id="stp-source-rate-range" min="4" max="9" step="0.5" value="6.5">
-                  </div>
-                  <div>
-                    <span style="font-size: 11px; color: var(--slate-muted);">Equity Return</span>
-                    <input type="range" class="luxury-range" id="stp-target-rate-range" min="9" max="18" step="0.5" value="13.5">
-                  </div>
-                </div>
-              </div>
-
-              <div class="studio-cta-wrap">
-                <a href="contact.html?service=portfolio&tool=stp-calculator" class="btn btn-primary" id="btn-stp-consult">
-                  Structure STP Deployment Strategy
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </a>
-                <span class="studio-cta-note">✦ Eliminates market peak risk while earning superior debt yields on undistributed reserves</span>
-              </div>
-            </div>
-
-            <div class="studio-analytics">
-              <div class="analytics-card">
-                <div class="analytics-header">
-                  <div class="analytics-status">
-                    <span class="status-dot"></span>
-                    <span>STP Transfer Dynamics</span>
-                  </div>
-                  <div class="analytics-badge" id="stp-badge">Staggered Asset Allocation</div>
-                </div>
-
-                <div class="analytics-stat-row">
-                  <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Total Combined Wealth <span class="illustrative-pill">Hypothetical</span></span>
-                    <span class="analytics-stat-num highlight" id="stp-total-wealth">₹ 35.80 Lakhs</span>
-                  </div>
-                  <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Total Net Gain</span>
-                    <span class="analytics-stat-num highlight" id="stp-net-gain">+₹ 10.80 Lakhs</span>
-                  </div>
-                </div>
-
-                <div class="analytics-stat-row" style="margin-bottom: var(--space-6);">
-                  <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Equity (Target) Corpus</span>
-                    <span class="analytics-stat-num" id="stp-target-wealth" style="font-size: var(--text-xl); color: #38bdf8;">₹ 31.40 Lakhs</span>
-                  </div>
-                  <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Remaining Debt Source</span>
-                    <span class="analytics-stat-num" id="stp-source-rem" style="font-size: var(--text-xl); color: #f59e0b;">₹ 4.40 Lakhs</span>
-                  </div>
-                </div>
-
-                <div class="allocation-section">
-                  <div class="allocation-title-row">
-                    <span class="allocation-lbl">Post-STP Asset Mix</span>
-                    <span class="allocation-total" id="stp-ratio-lbl">88% Equity : 12% Debt</span>
-                  </div>
-                  <div class="calc-breakdown-bar">
-                    <div class="breakdown-slice" id="stp-bar-target" style="width: 88%; background: linear-gradient(90deg, #38bdf8, #0ea5e9);" title="Equity Transferred"></div>
-                    <div class="breakdown-slice" id="stp-bar-source" style="width: 12%; background: linear-gradient(90deg, #f59e0b, #d97706);" title="Debt Remaining"></div>
-                  </div>
-                  <div class="allocation-legend">
-                    <div class="legend-item"><span class="legend-dot" style="background:#38bdf8;"></span>Equity Target (<span id="stp-leg-target">₹31.40 Lakhs</span>)</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span>Debt Reserve (<span id="stp-leg-source">₹4.40 Lakhs</span>)</div>
-                  </div>
-                </div>
-
-                <div class="simulator-disclaimer-box">
-                  <strong>*STP Disclosure:</strong> Calculations assume fixed periodic transfers and constant returns. Actual fund NAVs fluctuate daily.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══ TAB 7: SWP CALCULATOR ═══ -->
-        <div class="calc-tab-panel" id="swp-calc-tab">
-          <div class="studio-grid">
-            <div class="studio-controls">
-              <div class="simulator-notice-bar">
-                <svg class="simulator-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span><strong>Systematic Withdrawal Plan:</strong> Simulates predictable monthly retirement cash flows and portfolio longevity.</span>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Total Investment Corpus</span>
-                  <span class="studio-control-val" id="swp-corpus-val">₹ 3,00,00,000 (3.0 Cr)</span>
-                </div>
-                <input type="range" class="luxury-range" id="swp-corpus-range" min="25" max="1000" step="5" value="300">
-                <div class="range-ticks">
-                  <span>₹25 Lakhs</span>
-                  <span>₹1.5 Crore</span>
-                  <span>₹5 Crore</span>
-                  <span>₹10+ Crore</span>
-                </div>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Monthly Withdrawal (Cash Flow)</span>
-                  <span class="studio-control-val" id="swp-withdraw-val">₹ 1,50,000 / month</span>
-                </div>
-                <input type="range" class="luxury-range" id="swp-withdraw-range" min="10000" max="600000" step="5000" value="150000">
-                <div class="range-ticks">
-                  <span>₹10,000</span>
-                  <span>₹1.5 Lakhs</span>
-                  <span>₹3.5 Lakhs</span>
-                  <span>₹6 Lakhs</span>
-                </div>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Withdrawal Horizon</span>
-                  <span class="studio-control-val" id="swp-horizon-val">20 Years</span>
-                </div>
-                <input type="range" class="luxury-range" id="swp-horizon-range" min="5" max="35" step="1" value="20">
-                <div class="range-ticks">
-                  <span>5 Yrs</span>
-                  <span>15 Yrs</span>
-                  <span>25 Yrs</span>
-                  <span>35 Yrs</span>
-                </div>
-              </div>
-
-              <div class="studio-control-group">
-                <div class="studio-control-label-row">
-                  <span class="studio-control-label">Expected Portfolio Return (CAGR)</span>
-                  <span class="studio-control-val" id="swp-rate-val">9.0% p.a.*</span>
-                </div>
-                <input type="range" class="luxury-range" id="swp-rate-range" min="6" max="14" step="0.5" value="9">
-                <div class="range-ticks">
-                  <span>6% (Conservative)</span>
-                  <span>9% (Balanced)</span>
-                  <span>12%</span>
-                  <span>14% (Growth)</span>
-                </div>
-              </div>
-
-              <div class="studio-cta-wrap">
-                <a href="contact.html?service=tax&tool=swp-retirement" class="btn btn-primary" id="btn-swp-consult">
-                  Structure Tax-Efficient SWP Plan
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </a>
-                <span class="studio-cta-note">✦ Designed to optimize LTCG tax brackets and generate steady monthly income</span>
-              </div>
-            </div>
-
-            <div class="studio-analytics">
-              <div class="analytics-card">
-                <div class="analytics-header">
-                  <div class="analytics-status">
-                    <span class="status-dot"></span>
-                    <span>Retirement Longevity Model</span>
-                  </div>
-                  <div class="swp-status-pill sustainable" id="swp-health-badge">✦ Highly Sustainable</div>
-                </div>
-
-                <div class="analytics-stat-row">
-                  <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Total Cash Withdrawn <span class="illustrative-pill">Hypothetical</span></span>
-                    <span class="analytics-stat-num" id="swp-total-withdrawn" style="color:#10b981;">₹ 3.60 Cr</span>
-                  </div>
-                  <div class="analytics-stat">
-                    <span class="analytics-stat-lbl">Final Remaining Corpus</span>
-                    <span class="analytics-stat-num highlight" id="swp-final-balance">₹ 4.12 Cr</span>
-                  </div>
-                </div>
-
-                <div class="allocation-section">
-                  <div class="allocation-title-row">
-                    <span class="allocation-lbl">Corpus Cash Flow Dynamics</span>
-                    <span class="allocation-total" id="swp-sustain-text">Corpus Grows while Supporting Withdrawals</span>
-                  </div>
-                  <div class="calc-breakdown-bar">
-                    <div class="breakdown-slice withdrawn" id="swp-bar-withdrawn" style="width: 45%;" title="Total Withdrawn"></div>
-                    <div class="breakdown-slice remaining" id="swp-bar-remaining" style="width: 55%;" title="Remaining Legacy Balance"></div>
-                  </div>
-                  <div class="allocation-legend">
-                    <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span>Total Withdrawn (<span id="swp-leg-withdrawn">₹3.60 Cr</span>)</div>
-                    <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6;"></span>Remaining Capital (<span id="swp-leg-balance">₹4.12 Cr</span>)</div>
-                  </div>
-                </div>
-
-                <div class="simulator-disclaimer-box">
-                  <strong>*SWP Projection Notice:</strong> Calculations assume smooth compounding and regular monthly payouts. Real returns fluctuate with market cycles and taxes.
                 </div>
               </div>
             </div>
@@ -2159,8 +2555,6 @@
 
   <script type="module" src="/main.js"></script>
 
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-RPC0GM1YRM"></script>
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-RPC0GM1YRM');</script>
-  <script type="module" src="/main.js"></script>
+
 </body>
 </html>

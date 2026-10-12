@@ -3,6 +3,21 @@
 // Clean, Fast, High-Performance Interactive Engine
 // ============================================================
 
+import {
+  CURATED_AMCS,
+  CURATED_SCHEMES,
+  fetchSchemeData,
+  fetchLatestNav,
+  searchSchemes,
+  isDirectGrowth,
+  calculateRealSIP,
+  calculateRealSTP,
+  calculateRealSWP,
+  calculateRealLumpsumSIP,
+  calculateRealStepUpSIP,
+  MFDataError
+} from './src/services/mfData.js';
+
 (function () {
   'use strict';
 
@@ -666,6 +681,19 @@
         if (targetTabId) {
           e.preventDefault();
           activateCalcTab(targetTabId);
+
+          // Dedicated Wealth Planners automatically open in Real Historical Mode
+          if (targetTabId === 'sip-basic-tab') {
+            const sipRealBtn = document.getElementById('sip-btn-mode-real');
+            if (sipRealBtn) sipRealBtn.click();
+          } else if (targetTabId === 'stp-calc-tab') {
+            const stpRealBtn = document.getElementById('stp-btn-mode-real');
+            if (stpRealBtn) stpRealBtn.click();
+          } else if (targetTabId === 'swp-calc-tab') {
+            const swpRealBtn = document.getElementById('swp-btn-mode-real');
+            if (swpRealBtn) swpRealBtn.click();
+          }
+
           const studioEl = document.getElementById('portfolio-calculators');
           if (studioEl) {
             studioEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -700,7 +728,7 @@
     return isNeg ? `-${str}` : str;
   }
 
-  // ——— 1. BASIC SIP CALCULATOR ———
+  // ——— 1. REAL MUTUAL FUND DATA & BASIC SIP CALCULATOR ———
   const sipBasicMonthlyRange = document.getElementById('sip-basic-monthly-range');
   const sipBasicRateRange = document.getElementById('sip-basic-rate-range');
   const sipBasicHorizonRange = document.getElementById('sip-basic-horizon-range');
@@ -718,16 +746,227 @@
   const sipBasicLegGain = document.getElementById('sip-basic-leg-gain');
   const sipBasicRatioLbl = document.getElementById('sip-basic-ratio-lbl');
 
-  if (sipBasicMonthlyRange && sipBasicRateRange && sipBasicHorizonRange) {
-    function calculateBasicSIP() {
+  // Real Data Elements
+  const sipBtnModeReal = document.getElementById('sip-btn-mode-real');
+  const sipBtnModeHypo = document.getElementById('sip-btn-mode-hypo');
+  const sipRealControls = document.getElementById('sip-real-controls');
+  const sipHypoRateGroup = document.getElementById('sip-hypo-rate-group');
+  const sipAmcSelect = document.getElementById('sip-amc-select');
+  const sipSchemeSelect = document.getElementById('sip-scheme-select');
+  const sipFundCategory = document.getElementById('sip-fund-category');
+  const sipFundNavChip = document.getElementById('sip-fund-nav-chip');
+  const sipDayVal = document.getElementById('sip-day-val');
+  const sipDayPills = document.getElementById('sip-day-pills');
+  const sipHorizonLabel = document.getElementById('sip-horizon-label');
+  const sipRealMetricsGrid = document.getElementById('sip-real-metrics-grid');
+  const sipUnitsVal = document.getElementById('sip-units-val');
+  const sipNavVal = document.getElementById('sip-nav-val');
+  const sipAbsReturnVal = document.getElementById('sip-abs-return-val');
+  const sipCagrReturnVal = document.getElementById('sip-cagr-return-val');
+  const sipEngineTitle = document.getElementById('sip-engine-title');
+  const sipWealthLabel = document.getElementById('sip-wealth-label');
+  const sipGainLabel = document.getElementById('sip-gain-label');
+  const sipDisclaimerText = document.getElementById('sip-disclaimer-text');
+  const sipRealErrorBanner = document.getElementById('sip-real-error-banner');
+  const sipSchemeSearchInput = document.getElementById('sip-scheme-search-input');
+  const sipSchemeSearchBtn = document.getElementById('sip-scheme-search-btn');
+
+  if (sipBasicMonthlyRange && sipBasicHorizonRange) {
+    // Calculator suite defaults to hypothetical projection mode as per Section 3
+    let sipMode = 'hypothetical';
+    let sipSelectedDay = 1; // Default to 1st of month matching AMFI factsheet standard
+    let currentSchemeData = null;
+    let isFetchingScheme = false;
+    const sipPeriodDatesChip = document.getElementById('sip-period-dates-chip');
+
+    // Populate AMCs
+    if (sipAmcSelect) {
+      sipAmcSelect.innerHTML = CURATED_AMCS.map(amc => `<option value="${amc.id}">${amc.name}</option>`).join('');
+    }
+
+    function updateSipSchemeOptions(amcId) {
+      if (!sipSchemeSelect) return;
+      const schemes = CURATED_SCHEMES.filter(s => s.amc === amcId && (s.type === 'equity' || s.type === 'hybrid'));
+      sipSchemeSelect.innerHTML = schemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+      if (schemes.length > 0) {
+        onSipSchemeChange(schemes[0].code);
+      }
+    }
+
+    function showSipError(message) {
+      if (!sipRealErrorBanner) return;
+      sipRealErrorBanner.style.display = 'flex';
+      sipRealErrorBanner.innerHTML = `
+        <div><strong>Live Data Feed Error:</strong> ${message}</div>
+        <div style="font-size:12px; color:#FCA5A5;">Real NAV calculations cannot proceed without verified AMFI data. You may switch to mathematical projection mode:</div>
+        <button type="button" class="switch-to-hypo-btn" id="sip-error-switch-btn">Switch to Hypothetical CAGR Projection</button>
+      `;
+      const switchBtn = document.getElementById('sip-error-switch-btn');
+      if (switchBtn && sipBtnModeHypo) {
+        switchBtn.addEventListener('click', () => {
+          sipBtnModeHypo.click();
+        });
+      }
+    }
+
+    function clearSipError() {
+      if (sipRealErrorBanner) {
+        sipRealErrorBanner.style.display = 'none';
+        sipRealErrorBanner.innerHTML = '';
+      }
+    }
+
+    async function onSipSchemeChange(code) {
+      clearSipError();
+      const scheme = CURATED_SCHEMES.find(s => s.code === parseInt(code, 10));
+      if (scheme && sipFundCategory) {
+        sipFundCategory.textContent = scheme.category;
+      }
+      if (sipFundNavChip) {
+        sipFundNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching live data...';
+      }
+      isFetchingScheme = true;
+      try {
+        const data = await fetchSchemeData(code);
+        currentSchemeData = data;
+        clearSipError();
+        if (sipFundNavChip) {
+          sipFundNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${data.latestNav.toFixed(2)} (${data.latestDate})`;
+        }
+        recalculateSIP();
+      } catch (err) {
+        currentSchemeData = null;
+        if (sipFundNavChip) {
+          sipFundNavChip.innerHTML = '<span style="color:#ef4444;">Unable to load live NAV</span>';
+        }
+        showSipError(err.message || 'Failed to retrieve AMFI historical records.');
+      } finally {
+        isFetchingScheme = false;
+      }
+    }
+
+    // Dynamic Search Handler
+    async function handleSipSchemeSearch() {
+      if (!sipSchemeSearchInput) return;
+      const query = sipSchemeSearchInput.value.trim();
+      if (!query || query.length < 2) return;
+
+      if (sipFundNavChip) {
+        sipFundNavChip.innerHTML = '<span class="pulse-dot"></span> Searching AMFI database...';
+      }
+
+      try {
+        const results = await searchSchemes(query);
+        const directGrowthResults = results.filter(r => r.isDirectGrowth);
+        if (directGrowthResults.length === 0) {
+          showSipError(`No Direct Plan - Growth schemes found matching "${query}". Please refine your query.`);
+          return;
+        }
+
+        clearSipError();
+        // Append search results to scheme select
+        const optionsHtml = directGrowthResults.slice(0, 20).map(r => `<option value="${r.code}">${r.name}</option>`).join('');
+        if (sipSchemeSelect) {
+          sipSchemeSelect.innerHTML = optionsHtml;
+          onSipSchemeChange(directGrowthResults[0].code);
+        }
+      } catch (err) {
+        showSipError(err.message || 'Scheme search query failed.');
+      }
+    }
+
+    if (sipSchemeSearchBtn) {
+      sipSchemeSearchBtn.addEventListener('click', handleSipSchemeSearch);
+    }
+    if (sipSchemeSearchInput) {
+      sipSchemeSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSipSchemeSearch();
+        }
+      });
+    }
+
+    if (sipAmcSelect) {
+      sipAmcSelect.addEventListener('change', (e) => {
+        updateSipSchemeOptions(e.target.value);
+      });
+    }
+
+    if (sipSchemeSelect) {
+      sipSchemeSelect.addEventListener('change', (e) => {
+        onSipSchemeChange(e.target.value);
+      });
+    }
+
+    if (sipDayPills) {
+      sipDayPills.querySelectorAll('.radio-pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          sipDayPills.querySelectorAll('.radio-pill-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          sipSelectedDay = parseInt(btn.dataset.day, 10);
+          if (sipDayVal) sipDayVal.textContent = `${sipSelectedDay}th of every month`;
+          recalculateSIP();
+        });
+      });
+    }
+
+    // Toggle Modes
+    if (sipBtnModeReal && sipBtnModeHypo) {
+      sipBtnModeReal.addEventListener('click', () => {
+        sipMode = 'real';
+        sipBtnModeReal.classList.add('active');
+        sipBtnModeHypo.classList.remove('active');
+        if (sipRealControls) sipRealControls.style.display = 'block';
+        if (sipHypoRateGroup) sipHypoRateGroup.style.display = 'none';
+        if (sipRealMetricsGrid) sipRealMetricsGrid.style.display = 'grid';
+        if (sipHorizonLabel) sipHorizonLabel.textContent = 'Historical SIP Period';
+        if (sipEngineTitle) sipEngineTitle.textContent = 'Real NAV Historical Simulation Engine';
+        if (sipWealthLabel) sipWealthLabel.textContent = 'Simulated Portfolio Valuation';
+        if (sipGainLabel) sipGainLabel.textContent = 'Simulated Wealth Gain / Alpha';
+        if (sipDisclaimerText) {
+          sipDisclaimerText.innerHTML = '<strong>*Historical Simulation Notice:</strong> Calculated using actual historical daily AMFI NAV time-series. Mutual fund investments are subject to market risks; past performance does not predict or guarantee future returns.';
+        }
+        if (sipBasicHorizonRange) {
+          sipBasicHorizonRange.max = '10';
+          if (parseInt(sipBasicHorizonRange.value, 10) > 10) sipBasicHorizonRange.value = '5';
+        }
+        if (!currentSchemeData && sipAmcSelect) {
+          updateSipSchemeOptions(sipAmcSelect.value || CURATED_AMCS[0].id);
+        } else {
+          recalculateSIP();
+        }
+      });
+
+      sipBtnModeHypo.addEventListener('click', () => {
+        sipMode = 'hypothetical';
+        sipBtnModeHypo.classList.add('active');
+        sipBtnModeReal.classList.remove('active');
+        clearSipError();
+        if (sipRealControls) sipRealControls.style.display = 'none';
+        if (sipHypoRateGroup) sipHypoRateGroup.style.display = 'block';
+        if (sipRealMetricsGrid) sipRealMetricsGrid.style.display = 'none';
+        if (sipHorizonLabel) sipHorizonLabel.textContent = 'Investment Time Period';
+        if (sipEngineTitle) sipEngineTitle.textContent = 'SIP Compounding Model';
+        if (sipWealthLabel) sipWealthLabel.textContent = 'Expected Future Wealth';
+        if (sipGainLabel) sipGainLabel.textContent = 'Estimated Wealth Gain';
+        if (sipDisclaimerText) {
+          sipDisclaimerText.innerHTML = '<strong>*Statutory Disclaimer:</strong> Projections calculate smooth compounded growth at assumed CAGR. Mutual Fund investments are subject to market risks; read all scheme-related documents carefully.';
+        }
+        if (sipBasicHorizonRange) sipBasicHorizonRange.max = '35';
+        recalculateSIP();
+      });
+    }
+
+    function calculateHypotheticalSIP() {
       const monthly = parseFloat(sipBasicMonthlyRange.value);
-      const rate = parseFloat(sipBasicRateRange.value) / 100;
+      const rate = parseFloat(sipBasicRateRange ? sipBasicRateRange.value : 13) / 100;
       const years = parseInt(sipBasicHorizonRange.value, 10);
       const monthlyRate = rate / 12;
       const months = years * 12;
 
       sipBasicMonthlyVal.textContent = `${formatINR(monthly)} / month`;
-      sipBasicRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
+      if (sipBasicRateVal) sipBasicRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
       sipBasicHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
       if (sipBasicBadge) sipBasicBadge.textContent = `${years} Year Horizon`;
 
@@ -750,10 +989,64 @@
       if (sipBasicRatioLbl) sipBasicRatioLbl.textContent = `${gainRatio}% Gains : ${invRatio}% Principal`;
     }
 
-    sipBasicMonthlyRange.addEventListener('input', calculateBasicSIP);
-    sipBasicRateRange.addEventListener('input', calculateBasicSIP);
-    sipBasicHorizonRange.addEventListener('input', calculateBasicSIP);
-    calculateBasicSIP();
+    function recalculateSIP() {
+      const monthly = parseFloat(sipBasicMonthlyRange.value);
+      const years = parseInt(sipBasicHorizonRange.value, 10);
+      sipBasicMonthlyVal.textContent = `${formatINR(monthly)} / month`;
+      sipBasicHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+
+      if (sipMode === 'hypothetical' || !currentSchemeData) {
+        if (sipPeriodDatesChip) {
+          sipPeriodDatesChip.textContent = `Forward Projection (Assumed CAGR)`;
+        }
+        calculateHypotheticalSIP();
+        return;
+      }
+
+      // Real Historical Simulation
+      const result = calculateRealSIP({
+        schemeData: currentSchemeData,
+        monthlyAmount: monthly,
+        sipDay: sipSelectedDay,
+        years
+      });
+
+      if (sipBasicBadge) sipBasicBadge.textContent = `${years} Yr Historical Backtest`;
+      if (sipPeriodDatesChip) {
+        sipPeriodDatesChip.textContent = `${result.firstInstallmentDate} to ${result.lastInstallmentDate} (${result.installmentsCount} Installments)`;
+      }
+      if (sipBasicTotalWealth) sipBasicTotalWealth.textContent = formatINR(result.currentValuation);
+      if (sipBasicTotalGain) sipBasicTotalGain.textContent = `${result.netGain >= 0 ? '+' : ''}${formatINR(result.netGain)}`;
+      if (sipBasicTotalInvested) sipBasicTotalInvested.textContent = formatINR(result.totalInvested);
+      
+      const mult = result.totalInvested > 0 ? (result.currentValuation / result.totalInvested).toFixed(2) : '1.00';
+      if (sipBasicMultiplier) sipBasicMultiplier.textContent = `${mult}x`;
+
+      if (sipUnitsVal) sipUnitsVal.textContent = `${result.totalUnits.toFixed(3)} units`;
+      if (sipNavVal) sipNavVal.textContent = `₹ ${result.latestNav.toFixed(2)} (${result.latestNavDate})`;
+      if (sipAbsReturnVal) sipAbsReturnVal.textContent = `${result.absoluteReturnPercent >= 0 ? '+' : ''}${result.absoluteReturnPercent.toFixed(2)}%`;
+      if (sipCagrReturnVal) sipCagrReturnVal.textContent = `${result.annualizedReturnPercent >= 0 ? '+' : ''}${result.annualizedReturnPercent.toFixed(2)}% p.a. (XIRR)`;
+
+      if (sipBasicLegInv) sipBasicLegInv.textContent = formatINR(result.totalInvested);
+      if (sipBasicLegGain) sipBasicLegGain.textContent = formatINR(result.netGain);
+
+      const invRatio = result.currentValuation > 0 ? Math.round((result.totalInvested / result.currentValuation) * 100) : 50;
+      const gainRatio = Math.max(0, 100 - invRatio);
+      if (sipBasicBarInvested) sipBasicBarInvested.style.width = `${invRatio}%`;
+      if (sipBasicBarGains) sipBasicBarGains.style.width = `${gainRatio}%`;
+      if (sipBasicRatioLbl) sipBasicRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+    }
+
+    sipBasicMonthlyRange.addEventListener('input', recalculateSIP);
+    sipBasicHorizonRange.addEventListener('input', recalculateSIP);
+    if (sipBasicRateRange) sipBasicRateRange.addEventListener('input', recalculateSIP);
+
+    // Default to hypothetical projection mode as per Sections 3 & 4
+    if (sipBtnModeHypo) {
+      sipBtnModeHypo.click();
+    } else {
+      recalculateSIP();
+    }
   }
 
   // ——— 2. LUMPSUM & SIP CALCULATOR ———
@@ -765,55 +1058,331 @@
   const lsSipVal = document.getElementById('ls-sip-val');
   const lsHorizonVal = document.getElementById('ls-horizon-val');
   const lsRateVal = document.getElementById('ls-rate-val');
+  const lsHorizonLabel = document.getElementById('ls-horizon-label');
+  const lsHorizonTicks = document.getElementById('ls-horizon-ticks');
+  const lsRateGroup = document.getElementById('ls-rate-group');
+  const lsBtnModeReal = document.getElementById('ls-btn-mode-real');
+  const lsBtnModeHypo = document.getElementById('ls-btn-mode-hypo');
+  const lsRealControls = document.getElementById('ls-real-controls');
+  const lsRealErrorBanner = document.getElementById('ls-real-error-banner');
+  const lsSchemeSearchInput = document.getElementById('ls-scheme-search-input');
+  const lsSchemeSearchBtn = document.getElementById('ls-scheme-search-btn');
+  const lsAmcSelect = document.getElementById('ls-amc-select');
+  const lsSchemeSelect = document.getElementById('ls-scheme-select');
+  const lsFundCategory = document.getElementById('ls-fund-category');
+  const lsFundNavChip = document.getElementById('ls-fund-nav-chip');
+  const lsDayVal = document.getElementById('ls-day-val');
+  const lsDayPills = document.getElementById('ls-day-pills');
+  const lsEngineTitle = document.getElementById('ls-engine-title');
+  const lsBadge = document.getElementById('ls-badge');
+  const lsPeriodDatesChip = document.getElementById('ls-period-dates-chip');
+  const lsWealthLbl = document.getElementById('ls-wealth-lbl');
   const lsTotalWealth = document.getElementById('ls-total-wealth');
+  const lsGainLbl = document.getElementById('ls-gain-lbl');
   const lsTotalGain = document.getElementById('ls-total-gain');
+  const lsInvestedLbl = document.getElementById('ls-invested-lbl');
   const lsTotalInvested = document.getElementById('ls-total-invested');
+  const lsYieldLbl = document.getElementById('ls-yield-lbl');
   const lsLumpGrowVal = document.getElementById('ls-lump-grow-val');
+  const lsRealMetricsGrid = document.getElementById('ls-real-metrics-grid');
+  const lsRealLumpUnits = document.getElementById('ls-real-lump-units');
+  const lsRealSipUnits = document.getElementById('ls-real-sip-units');
+  const lsRealTotalUnits = document.getElementById('ls-real-total-units');
+  const lsRealNavDisplay = document.getElementById('ls-real-nav-display');
+  const lsRealAbsReturn = document.getElementById('ls-real-abs-return');
+  const lsRealXirr = document.getElementById('ls-real-xirr');
+  const lsRealSipOutlay = document.getElementById('ls-real-sip-outlay');
+  const lsRealTxCount = document.getElementById('ls-real-tx-count');
   const lsBarInvested = document.getElementById('ls-bar-invested');
   const lsBarGains = document.getElementById('ls-bar-gains');
   const lsLegInv = document.getElementById('ls-leg-inv');
   const lsLegGain = document.getElementById('ls-leg-gain');
   const lsRatioLbl = document.getElementById('ls-ratio-lbl');
+  const lsDisclaimerBox = document.getElementById('ls-disclaimer-box');
 
-  if (lsLumpRange && lsSipRange && lsHorizonRange && lsRateRange) {
-    function calculateLumpsumSIP() {
-      const lump = parseFloat(lsLumpRange.value);
-      const sip = parseFloat(lsSipRange.value);
-      const years = parseInt(lsHorizonRange.value, 10);
-      const rate = parseFloat(lsRateRange.value) / 100;
-      const monthlyRate = rate / 12;
-      const months = years * 12;
+  if (lsLumpRange && lsSipRange && lsHorizonRange) {
+    let lsMode = 'hypothetical';
+    let lsSelectedDay = 1;
+    let currentLsSchemeData = null;
+    let isFetchingLsScheme = false;
 
-      lsLumpVal.textContent = formatINR(lump);
-      lsSipVal.textContent = `${formatINR(sip)} / month`;
-      lsHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
-      lsRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
-
-      const lumpFV = lump * Math.pow(1 + rate, years);
-      const sipFV = sip * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate);
-      const totalInvested = lump + (sip * months);
-      const totalWealth = lumpFV + sipFV;
-      const totalGain = Math.max(0, totalWealth - totalInvested);
-
-      if (lsTotalWealth) lsTotalWealth.textContent = formatINR(totalWealth);
-      if (lsTotalGain) lsTotalGain.textContent = `+${formatINR(totalGain)}`;
-      if (lsTotalInvested) lsTotalInvested.textContent = formatINR(totalInvested);
-      if (lsLumpGrowVal) lsLumpGrowVal.textContent = formatINR(lumpFV);
-      if (lsLegInv) lsLegInv.textContent = formatINR(totalInvested);
-      if (lsLegGain) lsLegGain.textContent = formatINR(totalGain);
-
-      const invRatio = Math.round((totalInvested / totalWealth) * 100);
-      const gainRatio = 100 - invRatio;
-      if (lsBarInvested) lsBarInvested.style.width = `${invRatio}%`;
-      if (lsBarGains) lsBarGains.style.width = `${gainRatio}%`;
-      if (lsRatioLbl) lsRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+    if (lsAmcSelect) {
+      lsAmcSelect.innerHTML = CURATED_AMCS.map(amc => `<option value="${amc.id}">${amc.name}</option>`).join('');
     }
 
-    lsLumpRange.addEventListener('input', calculateLumpsumSIP);
-    lsSipRange.addEventListener('input', calculateLumpsumSIP);
-    lsHorizonRange.addEventListener('input', calculateLumpsumSIP);
-    lsRateRange.addEventListener('input', calculateLumpsumSIP);
-    calculateLumpsumSIP();
+    function updateLsSchemeOptions(amcId) {
+      if (!lsSchemeSelect) return;
+      const schemes = CURATED_SCHEMES.filter(s => s.amc === amcId && (s.type === 'equity' || s.type === 'hybrid'));
+      lsSchemeSelect.innerHTML = schemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+      if (schemes.length > 0) {
+        onLsSchemeChange(schemes[0].code);
+      }
+    }
+
+    function showLsError(message) {
+      if (!lsRealErrorBanner) return;
+      lsRealErrorBanner.style.display = 'flex';
+      lsRealErrorBanner.innerHTML = `
+        <div><strong>Live Data Feed Error:</strong> ${message}</div>
+        <div style="font-size:12px; color:#FCA5A5;">Real NAV simulations require verified AMFI data. You may switch to mathematical projection mode:</div>
+        <button type="button" class="switch-to-hypo-btn" id="ls-error-switch-btn">Switch to Hypothetical CAGR Projection</button>
+      `;
+      const switchBtn = document.getElementById('ls-error-switch-btn');
+      if (switchBtn && lsBtnModeHypo) {
+        switchBtn.addEventListener('click', () => {
+          lsBtnModeHypo.click();
+        });
+      }
+    }
+
+    function clearLsError() {
+      if (lsRealErrorBanner) {
+        lsRealErrorBanner.style.display = 'none';
+        lsRealErrorBanner.innerHTML = '';
+      }
+    }
+
+    async function onLsSchemeChange(code) {
+      clearLsError();
+      const scheme = CURATED_SCHEMES.find(s => s.code === parseInt(code, 10));
+      if (scheme && lsFundCategory) {
+        lsFundCategory.textContent = scheme.category;
+      }
+      if (lsFundNavChip) {
+        lsFundNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching live data...';
+      }
+      isFetchingLsScheme = true;
+      try {
+        const data = await fetchSchemeData(code);
+        currentLsSchemeData = data;
+        clearLsError();
+        if (lsFundNavChip) {
+          lsFundNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${data.latestNav.toFixed(2)} (${data.latestDate})`;
+        }
+        recalculateLumpsumSIP();
+      } catch (err) {
+        currentLsSchemeData = null;
+        if (lsFundNavChip) {
+          lsFundNavChip.innerHTML = '<span style="color:#ef4444;">Unable to load live NAV</span>';
+        }
+        showLsError(err.message || 'Failed to retrieve AMFI historical records.');
+      } finally {
+        isFetchingLsScheme = false;
+      }
+    }
+
+    async function handleLsSchemeSearch() {
+      if (!lsSchemeSearchInput) return;
+      const query = lsSchemeSearchInput.value.trim();
+      if (!query || query.length < 2) return;
+
+      if (lsFundNavChip) {
+        lsFundNavChip.innerHTML = '<span class="pulse-dot"></span> Searching AMFI database...';
+      }
+
+      try {
+        const results = await searchSchemes(query);
+        const directGrowthResults = results.filter(r => r.isDirectGrowth);
+        if (directGrowthResults.length === 0) {
+          showLsError(`No Direct Plan - Growth schemes found matching "${query}". Please refine your query.`);
+          return;
+        }
+
+        clearLsError();
+        const optionsHtml = directGrowthResults.slice(0, 20).map(r => `<option value="${r.code}">${r.name}</option>`).join('');
+        if (lsSchemeSelect) {
+          lsSchemeSelect.innerHTML = optionsHtml;
+          onLsSchemeChange(directGrowthResults[0].code);
+        }
+      } catch (err) {
+        showLsError(err.message || 'Scheme search query failed.');
+      }
+    }
+
+    if (lsSchemeSearchBtn) lsSchemeSearchBtn.addEventListener('click', handleLsSchemeSearch);
+    if (lsSchemeSearchInput) {
+      lsSchemeSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleLsSchemeSearch();
+        }
+      });
+    }
+
+    if (lsAmcSelect) {
+      lsAmcSelect.addEventListener('change', (e) => {
+        updateLsSchemeOptions(e.target.value);
+      });
+    }
+
+    if (lsSchemeSelect) {
+      lsSchemeSelect.addEventListener('change', (e) => {
+        onLsSchemeChange(e.target.value);
+      });
+    }
+
+    if (lsDayPills) {
+      lsDayPills.querySelectorAll('.radio-pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          lsDayPills.querySelectorAll('.radio-pill-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          lsSelectedDay = parseInt(btn.dataset.day, 10);
+          if (lsDayVal) lsDayVal.textContent = `${lsSelectedDay}${lsSelectedDay === 1 ? 'st' : 'th'} of every month`;
+          recalculateLumpsumSIP();
+        });
+      });
+    }
+
+    // Mode switching for Lumpsum & SIP
+    if (lsBtnModeReal && lsBtnModeHypo) {
+      lsBtnModeReal.addEventListener('click', () => {
+        lsMode = 'real';
+        lsBtnModeReal.classList.add('active');
+        lsBtnModeHypo.classList.remove('active');
+        if (lsRealControls) lsRealControls.style.display = 'block';
+        if (lsRateGroup) lsRateGroup.style.display = 'none';
+        if (lsRealMetricsGrid) lsRealMetricsGrid.style.display = 'grid';
+        if (lsHorizonLabel) lsHorizonLabel.textContent = 'Historical Investment Period';
+        if (lsEngineTitle) lsEngineTitle.textContent = 'Real NAV Historical Simulation Engine';
+        if (lsWealthLbl) lsWealthLbl.innerHTML = 'Simulated Portfolio Valuation <span class="live-nav-chip"><span class="pulse-dot"></span> Live NAV</span>';
+        if (lsGainLbl) lsGainLbl.textContent = 'Simulated Capital Gain / Alpha';
+        if (lsInvestedLbl) lsInvestedLbl.textContent = 'Total Capital Invested';
+        if (lsYieldLbl) lsYieldLbl.textContent = 'Lumpsum Component Value';
+        if (lsDisclaimerBox) {
+          lsDisclaimerBox.innerHTML = '<strong>*Historical Simulation Notice:</strong> Calculated using actual historical AMFI daily NAV time-series. Mutual fund investments are subject to market risks; past performance does not guarantee future results.';
+        }
+        if (lsHorizonRange) {
+          lsHorizonRange.max = '10';
+          if (parseInt(lsHorizonRange.value, 10) > 10) lsHorizonRange.value = '5';
+          if (lsHorizonTicks) {
+            lsHorizonTicks.innerHTML = '<span>1 Yr</span><span>3 Yrs</span><span>5 Yrs</span><span>10 Yrs</span>';
+          }
+        }
+        if (!currentLsSchemeData && lsAmcSelect) {
+          updateLsSchemeOptions(lsAmcSelect.value || CURATED_AMCS[0].id);
+        } else {
+          recalculateLumpsumSIP();
+        }
+      });
+
+      lsBtnModeHypo.addEventListener('click', () => {
+        lsMode = 'hypothetical';
+        lsBtnModeHypo.classList.add('active');
+        lsBtnModeReal.classList.remove('active');
+        clearLsError();
+        if (lsRealControls) lsRealControls.style.display = 'none';
+        if (lsRateGroup) lsRateGroup.style.display = 'block';
+        if (lsRealMetricsGrid) lsRealMetricsGrid.style.display = 'none';
+        if (lsHorizonLabel) lsHorizonLabel.textContent = 'Investment Duration';
+        if (lsEngineTitle) lsEngineTitle.textContent = 'Hybrid Compounding Model';
+        if (lsWealthLbl) lsWealthLbl.innerHTML = 'Total Future Value <span class="illustrative-pill">Hypothetical</span>';
+        if (lsGainLbl) lsGainLbl.textContent = 'Estimated Total Gain';
+        if (lsInvestedLbl) lsInvestedLbl.textContent = 'Total Principal Outlay';
+        if (lsYieldLbl) lsYieldLbl.textContent = 'Lumpsum Yield Contribution';
+        if (lsPeriodDatesChip) lsPeriodDatesChip.textContent = '';
+        if (lsDisclaimerBox) {
+          lsDisclaimerBox.innerHTML = '<strong>*Statutory Disclaimer:</strong> Lumpsum and SIP compounding simulations assume regular annual CAGR. Mutual Fund investments are subject to market risks; read all scheme documents.';
+        }
+        if (lsHorizonRange) {
+          lsHorizonRange.max = '30';
+          if (lsHorizonTicks) {
+            lsHorizonTicks.innerHTML = '<span>1 Yr</span><span>10 Yrs</span><span>20 Yrs</span><span>30 Yrs</span>';
+          }
+        }
+        recalculateLumpsumSIP();
+      });
+    }
+
+    function recalculateLumpsumSIP() {
+      const lump = parseFloat(lsLumpRange.value) || 0;
+      const sip = parseFloat(lsSipRange.value) || 0;
+      const years = parseInt(lsHorizonRange.value, 10) || 1;
+
+      if (lsLumpVal) lsLumpVal.textContent = formatINR(lump);
+      if (lsSipVal) lsSipVal.textContent = `${formatINR(sip)} / month`;
+      if (lsHorizonVal) lsHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+
+      if (lsMode === 'real') {
+        if (!currentLsSchemeData || isFetchingLsScheme) {
+          return;
+        }
+
+        try {
+          clearLsError();
+          const res = calculateRealLumpsumSIP({
+            schemeData: currentLsSchemeData,
+            lumpsumAmount: lump,
+            monthlyAmount: sip,
+            sipDay: lsSelectedDay,
+            years
+          });
+
+          if (lsBadge) lsBadge.textContent = `${years} Year Historical NAV`;
+          if (lsPeriodDatesChip) lsPeriodDatesChip.textContent = `${res.firstInstallmentDate} → ${res.latestNavDate}`;
+          if (lsTotalWealth) lsTotalWealth.textContent = formatINR(res.currentValuation);
+          if (lsTotalGain) lsTotalGain.textContent = `${res.netGain >= 0 ? '+' : '-'}${formatINR(Math.abs(res.netGain))}`;
+          if (lsTotalInvested) lsTotalInvested.textContent = formatINR(res.totalInvested);
+          if (lsLumpGrowVal) lsLumpGrowVal.textContent = formatINR(res.lumpsumValuation);
+
+          // Real stat boxes
+          if (lsRealLumpUnits) lsRealLumpUnits.textContent = res.initialLumpsumUnits.toFixed(3);
+          if (lsRealSipUnits) lsRealSipUnits.textContent = res.sipUnits.toFixed(3);
+          if (lsRealTotalUnits) lsRealTotalUnits.textContent = res.totalUnits.toFixed(3);
+          if (lsRealNavDisplay) lsRealNavDisplay.textContent = `₹ ${res.latestNav.toFixed(2)} (${res.latestNavDate})`;
+          if (lsRealAbsReturn) lsRealAbsReturn.textContent = `${res.absoluteReturnPercent >= 0 ? '+' : ''}${res.absoluteReturnPercent.toFixed(2)}%`;
+          if (lsRealXirr) lsRealXirr.textContent = `${res.annualizedReturnPercent.toFixed(2)}% p.a.`;
+          if (lsRealSipOutlay) lsRealSipOutlay.textContent = formatINR(res.totalSipInvested);
+          if (lsRealTxCount) lsRealTxCount.textContent = `${res.installmentsCount + (res.initialLumpsum > 0 ? 1 : 0)} executions`;
+
+          if (lsLegInv) lsLegInv.textContent = formatINR(res.totalInvested);
+          if (lsLegGain) lsLegGain.textContent = formatINR(Math.max(0, res.netGain));
+
+          const invRatio = res.currentValuation > 0 ? Math.min(100, Math.round((res.totalInvested / res.currentValuation) * 100)) : 100;
+          const gainRatio = Math.max(0, 100 - invRatio);
+          if (lsBarInvested) lsBarInvested.style.width = `${invRatio}%`;
+          if (lsBarGains) lsBarGains.style.width = `${gainRatio}%`;
+          if (lsRatioLbl) lsRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+        } catch (err) {
+          showLsError(err.message || 'Error executing historical simulation.');
+        }
+      } else {
+        // Hypothetical Projection
+        const rate = lsRateRange ? (parseFloat(lsRateRange.value) / 100) : 0.13;
+        const monthlyRate = rate / 12;
+        const months = years * 12;
+
+        if (lsRateVal) lsRateVal.textContent = `${(rate * 100).toFixed(1)}% p.a.*`;
+        if (lsBadge) lsBadge.textContent = 'Combined Portfolio';
+        if (lsPeriodDatesChip) lsPeriodDatesChip.textContent = '';
+
+        const lumpFV = lump * Math.pow(1 + rate, years);
+        const sipFV = monthlyRate > 0 ? (sip * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate)) : (sip * months);
+        const totalInvested = lump + (sip * months);
+        const totalWealth = lumpFV + sipFV;
+        const totalGain = Math.max(0, totalWealth - totalInvested);
+
+        if (lsTotalWealth) lsTotalWealth.textContent = formatINR(totalWealth);
+        if (lsTotalGain) lsTotalGain.textContent = `+${formatINR(totalGain)}`;
+        if (lsTotalInvested) lsTotalInvested.textContent = formatINR(totalInvested);
+        if (lsLumpGrowVal) lsLumpGrowVal.textContent = formatINR(lumpFV);
+        if (lsLegInv) lsLegInv.textContent = formatINR(totalInvested);
+        if (lsLegGain) lsLegGain.textContent = formatINR(totalGain);
+
+        const invRatio = totalWealth > 0 ? Math.min(100, Math.round((totalInvested / totalWealth) * 100)) : 100;
+        const gainRatio = Math.max(0, 100 - invRatio);
+        if (lsBarInvested) lsBarInvested.style.width = `${invRatio}%`;
+        if (lsBarGains) lsBarGains.style.width = `${gainRatio}%`;
+        if (lsRatioLbl) lsRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+      }
+    }
+
+    lsLumpRange.addEventListener('input', recalculateLumpsumSIP);
+    lsSipRange.addEventListener('input', recalculateLumpsumSIP);
+    lsHorizonRange.addEventListener('input', recalculateLumpsumSIP);
+    if (lsRateRange) lsRateRange.addEventListener('input', recalculateLumpsumSIP);
+
+    // Initial calculation in hypothetical mode
+    recalculateLumpsumSIP();
   }
 
   // ——— 3. STEP-UP SIP CALCULATOR ———
@@ -825,69 +1394,347 @@
   const sipStepupVal = document.getElementById('sip-stepup-val');
   const sipHorizonVal = document.getElementById('sip-horizon-val');
   const sipRateVal = document.getElementById('sip-rate-val');
+  const stepupMonthlyLbl = document.getElementById('stepup-monthly-lbl');
+  const stepupHorizonLabel = document.getElementById('stepup-horizon-label');
+  const stepupHorizonTicks = document.getElementById('stepup-horizon-ticks');
+  const stepupRateGroup = document.getElementById('stepup-rate-group');
+  const stepupBtnModeReal = document.getElementById('stepup-btn-mode-real');
+  const stepupBtnModeHypo = document.getElementById('stepup-btn-mode-hypo');
+  const stepupRealControls = document.getElementById('stepup-real-controls');
+  const stepupRealErrorBanner = document.getElementById('stepup-real-error-banner');
+  const stepupSchemeSearchInput = document.getElementById('stepup-scheme-search-input');
+  const stepupSchemeSearchBtn = document.getElementById('stepup-scheme-search-btn');
+  const stepupAmcSelect = document.getElementById('stepup-amc-select');
+  const stepupSchemeSelect = document.getElementById('stepup-scheme-select');
+  const stepupFundCategory = document.getElementById('stepup-fund-category');
+  const stepupFundNavChip = document.getElementById('stepup-fund-nav-chip');
+  const stepupDayVal = document.getElementById('stepup-day-val');
+  const stepupDayPills = document.getElementById('stepup-day-pills');
+  const stepupEngineTitle = document.getElementById('stepup-engine-title');
+  const stepupPeriodDatesChip = document.getElementById('stepup-period-dates-chip');
+  const stepupWealthLbl = document.getElementById('stepup-wealth-lbl');
   const sipTotalWealth = document.getElementById('sip-total-wealth');
+  const stepupGainLbl = document.getElementById('stepup-gain-lbl');
   const sipTotalGain = document.getElementById('sip-total-gain');
+  const stepupInvestedLbl = document.getElementById('stepup-invested-lbl');
   const sipTotalInvested = document.getElementById('sip-total-invested');
+  const stepupStat4Lbl = document.getElementById('stepup-stat4-lbl');
   const sipAdvantage = document.getElementById('sip-advantage');
   const sipBadge = document.getElementById('sip-badge');
+  const stepupRealMetricsGrid = document.getElementById('stepup-real-metrics-grid');
+  const stepupRealUnits = document.getElementById('stepup-real-units');
+  const stepupRealNavDisplay = document.getElementById('stepup-real-nav-display');
+  const stepupRealAbsReturn = document.getElementById('stepup-real-abs-return');
+  const stepupRealXirr = document.getElementById('stepup-real-xirr');
+  const stepupRealScheduleList = document.getElementById('stepup-real-schedule-list');
+  const stepupRealTxCount = document.getElementById('stepup-real-tx-count');
   const sipBarInvested = document.getElementById('sip-bar-invested');
   const sipBarGains = document.getElementById('sip-bar-gains');
   const sipLegInv = document.getElementById('sip-leg-inv');
   const sipLegGain = document.getElementById('sip-leg-gain');
   const sipRatioLbl = document.getElementById('sip-ratio-lbl');
+  const stepupDisclaimerBox = document.getElementById('stepup-disclaimer-box');
 
-  if (sipMonthlyRange && sipStepupRange && sipHorizonRange && sipRateRange) {
-    function calculateSIP() {
-      const initialMonthly = parseFloat(sipMonthlyRange.value);
-      const stepUpPercent = parseFloat(sipStepupRange.value) / 100;
-      const years = parseInt(sipHorizonRange.value, 10);
-      const annualRate = parseFloat(sipRateRange.value) / 100;
-      const monthlyRate = annualRate / 12;
+  if (sipMonthlyRange && sipStepupRange && sipHorizonRange) {
+    let stepupMode = 'hypothetical';
+    let stepupSelectedDay = 1;
+    let currentStepupSchemeData = null;
+    let isFetchingStepupScheme = false;
 
-      sipMonthlyVal.textContent = `${formatINR(initialMonthly)} / month`;
-      sipStepupVal.textContent = stepUpPercent === 0 ? '0% (Flat SIP)' : `${(stepUpPercent * 100).toFixed(0)}% per year`;
-      sipHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
-      sipRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.*`;
-      if (sipBadge) sipBadge.textContent = stepUpPercent === 0 ? 'Regular Flat SIP' : `+${(stepUpPercent * 100).toFixed(0)}% Annual Step-Up`;
-
-      let totalInvested = 0;
-      let futureValue = 0;
-      const totalMonths = years * 12;
-
-      for (let m = 1; m <= totalMonths; m++) {
-        const yearIndex = Math.floor((m - 1) / 12);
-        const currentMonthly = initialMonthly * Math.pow(1 + stepUpPercent, yearIndex);
-        totalInvested += currentMonthly;
-        futureValue += currentMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
-      }
-
-      let flatFV = 0;
-      for (let m = 1; m <= totalMonths; m++) {
-        flatFV += initialMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
-      }
-
-      const totalGain = Math.max(0, futureValue - totalInvested);
-      const advantage = Math.max(0, futureValue - flatFV);
-
-      if (sipTotalWealth) sipTotalWealth.textContent = formatINR(futureValue);
-      if (sipTotalGain) sipTotalGain.textContent = `+${formatINR(totalGain)}`;
-      if (sipTotalInvested) sipTotalInvested.textContent = formatINR(totalInvested);
-      if (sipAdvantage) sipAdvantage.textContent = stepUpPercent === 0 ? '₹ 0 (Base)' : `+${formatINR(advantage)}`;
-      if (sipLegInv) sipLegInv.textContent = formatINR(totalInvested);
-      if (sipLegGain) sipLegGain.textContent = formatINR(totalGain);
-
-      const invRatio = Math.round((totalInvested / futureValue) * 100);
-      const gainRatio = 100 - invRatio;
-      if (sipBarInvested) sipBarInvested.style.width = `${invRatio}%`;
-      if (sipBarGains) sipBarGains.style.width = `${gainRatio}%`;
-      if (sipRatioLbl) sipRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+    if (stepupAmcSelect) {
+      stepupAmcSelect.innerHTML = CURATED_AMCS.map(amc => `<option value="${amc.id}">${amc.name}</option>`).join('');
     }
 
-    sipMonthlyRange.addEventListener('input', calculateSIP);
-    sipStepupRange.addEventListener('input', calculateSIP);
-    sipHorizonRange.addEventListener('input', calculateSIP);
-    sipRateRange.addEventListener('input', calculateSIP);
-    calculateSIP();
+    function updateStepupSchemeOptions(amcId) {
+      if (!stepupSchemeSelect) return;
+      const schemes = CURATED_SCHEMES.filter(s => s.amc === amcId && (s.type === 'equity' || s.type === 'hybrid'));
+      stepupSchemeSelect.innerHTML = schemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+      if (schemes.length > 0) {
+        onStepupSchemeChange(schemes[0].code);
+      }
+    }
+
+    function showStepupError(message) {
+      if (!stepupRealErrorBanner) return;
+      stepupRealErrorBanner.style.display = 'flex';
+      stepupRealErrorBanner.innerHTML = `
+        <div><strong>Live Data Feed Error:</strong> ${message}</div>
+        <div style="font-size:12px; color:#FCA5A5;">Real NAV simulations require verified AMFI data. You may switch to mathematical projection mode:</div>
+        <button type="button" class="switch-to-hypo-btn" id="stepup-error-switch-btn">Switch to Hypothetical CAGR Projection</button>
+      `;
+      const switchBtn = document.getElementById('stepup-error-switch-btn');
+      if (switchBtn && stepupBtnModeHypo) {
+        switchBtn.addEventListener('click', () => {
+          stepupBtnModeHypo.click();
+        });
+      }
+    }
+
+    function clearStepupError() {
+      if (!stepupRealErrorBanner) return;
+      stepupRealErrorBanner.style.display = 'none';
+      stepupRealErrorBanner.innerHTML = '';
+    }
+
+    async function onStepupSchemeChange(code) {
+      clearStepupError();
+      const scheme = CURATED_SCHEMES.find(s => s.code === parseInt(code, 10));
+      if (scheme && stepupFundCategory) {
+        stepupFundCategory.textContent = scheme.category;
+      }
+      if (stepupFundNavChip) {
+        stepupFundNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching live data...';
+      }
+      isFetchingStepupScheme = true;
+      try {
+        const data = await fetchSchemeData(code);
+        currentStepupSchemeData = data;
+        clearStepupError();
+        if (stepupFundNavChip) {
+          stepupFundNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${data.latestNav.toFixed(2)} (${data.latestDate})`;
+        }
+        recalculateStepUpSIP();
+      } catch (err) {
+        currentStepupSchemeData = null;
+        if (stepupFundNavChip) {
+          stepupFundNavChip.innerHTML = '<span style="color:#ef4444;">Unable to load live NAV</span>';
+        }
+        showStepupError(err.message || 'Failed to retrieve AMFI historical records.');
+      } finally {
+        isFetchingStepupScheme = false;
+      }
+    }
+
+    async function handleStepupSchemeSearch() {
+      if (!stepupSchemeSearchInput) return;
+      const query = stepupSchemeSearchInput.value.trim();
+      if (!query || query.length < 2) return;
+
+      if (stepupFundNavChip) {
+        stepupFundNavChip.innerHTML = '<span class="pulse-dot"></span> Searching AMFI database...';
+      }
+
+      try {
+        const results = await searchSchemes(query);
+        const directGrowthResults = results.filter(r => r.isDirectGrowth);
+        if (directGrowthResults.length === 0) {
+          showStepupError(`No Direct Plan - Growth schemes found matching "${query}". Please refine your query.`);
+          return;
+        }
+
+        clearStepupError();
+        const optionsHtml = directGrowthResults.slice(0, 20).map(r => `<option value="${r.code}">${r.name}</option>`).join('');
+        if (stepupSchemeSelect) {
+          stepupSchemeSelect.innerHTML = optionsHtml;
+          onStepupSchemeChange(directGrowthResults[0].code);
+        }
+      } catch (err) {
+        showStepupError(err.message || 'Scheme search query failed.');
+      }
+    }
+
+    if (stepupSchemeSearchBtn) stepupSchemeSearchBtn.addEventListener('click', handleStepupSchemeSearch);
+    if (stepupSchemeSearchInput) {
+      stepupSchemeSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleStepupSchemeSearch();
+        }
+      });
+    }
+
+    if (stepupAmcSelect) {
+      stepupAmcSelect.addEventListener('change', (e) => {
+        updateStepupSchemeOptions(e.target.value);
+      });
+    }
+
+    if (stepupSchemeSelect) {
+      stepupSchemeSelect.addEventListener('change', (e) => {
+        onStepupSchemeChange(e.target.value);
+      });
+    }
+
+    if (stepupDayPills) {
+      stepupDayPills.querySelectorAll('.radio-pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          stepupDayPills.querySelectorAll('.radio-pill-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          stepupSelectedDay = parseInt(btn.dataset.day, 10);
+          if (stepupDayVal) stepupDayVal.textContent = `${stepupSelectedDay}${stepupSelectedDay === 1 ? 'st' : 'th'} of every month`;
+          recalculateStepUpSIP();
+        });
+      });
+    }
+
+    // Mode switching for Step-Up SIP
+    if (stepupBtnModeReal && stepupBtnModeHypo) {
+      stepupBtnModeReal.addEventListener('click', () => {
+        stepupMode = 'real';
+        stepupBtnModeReal.classList.add('active');
+        stepupBtnModeHypo.classList.remove('active');
+        if (stepupRealControls) stepupRealControls.style.display = 'block';
+        if (stepupRateGroup) stepupRateGroup.style.display = 'none';
+        if (stepupRealMetricsGrid) stepupRealMetricsGrid.style.display = 'grid';
+        if (stepupHorizonLabel) stepupHorizonLabel.textContent = 'Historical SIP Period';
+        if (stepupMonthlyLbl) stepupMonthlyLbl.textContent = 'Starting Monthly Investment';
+        if (stepupEngineTitle) stepupEngineTitle.textContent = 'Real NAV Step-Up Simulation Engine';
+        if (stepupWealthLbl) stepupWealthLbl.innerHTML = 'Simulated Portfolio Valuation <span class="live-nav-chip"><span class="pulse-dot"></span> Live NAV</span>';
+        if (stepupGainLbl) stepupGainLbl.textContent = 'Simulated Capital Gain / Alpha';
+        if (stepupInvestedLbl) stepupInvestedLbl.textContent = 'Total Capital Invested';
+        if (stepupStat4Lbl) stepupStat4Lbl.textContent = 'Annual Step-Up Rate';
+        if (stepupDisclaimerBox) {
+          stepupDisclaimerBox.innerHTML = '<strong>*Historical Simulation Notice:</strong> Calculated using actual historical AMFI daily NAV time-series with annual SIP increments. Mutual fund investments are subject to market risks; past performance does not guarantee future results.';
+        }
+        if (sipHorizonRange) {
+          sipHorizonRange.max = '10';
+          if (parseInt(sipHorizonRange.value, 10) > 10) sipHorizonRange.value = '5';
+          if (stepupHorizonTicks) {
+            stepupHorizonTicks.innerHTML = '<span>1 Yr</span><span>3 Yrs</span><span>5 Yrs</span><span>10 Yrs</span>';
+          }
+        }
+        if (!currentStepupSchemeData && stepupAmcSelect) {
+          updateStepupSchemeOptions(stepupAmcSelect.value || CURATED_AMCS[0].id);
+        } else {
+          recalculateStepUpSIP();
+        }
+      });
+
+      stepupBtnModeHypo.addEventListener('click', () => {
+        stepupMode = 'hypothetical';
+        stepupBtnModeHypo.classList.add('active');
+        stepupBtnModeReal.classList.remove('active');
+        clearStepupError();
+        if (stepupRealControls) stepupRealControls.style.display = 'none';
+        if (stepupRateGroup) stepupRateGroup.style.display = 'block';
+        if (stepupRealMetricsGrid) stepupRealMetricsGrid.style.display = 'none';
+        if (stepupHorizonLabel) stepupHorizonLabel.textContent = 'Investment Duration';
+        if (stepupMonthlyLbl) stepupMonthlyLbl.textContent = 'Initial Monthly Investment';
+        if (stepupEngineTitle) stepupEngineTitle.textContent = 'Step-Up Compounding Engine';
+        if (stepupWealthLbl) stepupWealthLbl.innerHTML = 'Expected Future Corpus <span class="illustrative-pill">Hypothetical</span>';
+        if (stepupGainLbl) stepupGainLbl.textContent = 'Estimated Wealth Gain';
+        if (stepupInvestedLbl) stepupInvestedLbl.textContent = 'Total Amount Invested';
+        if (stepupStat4Lbl) stepupStat4Lbl.textContent = 'Step-Up Advantage vs Flat';
+        if (stepupPeriodDatesChip) stepupPeriodDatesChip.textContent = '';
+        if (stepupDisclaimerBox) {
+          stepupDisclaimerBox.innerHTML = '<strong>*Statutory Disclosure:</strong> Step-Up SIP projections calculate annual contribution increments with constant CAGR compounding for illustrative modeling. Mutual Fund investments are subject to market risks.';
+        }
+        if (sipHorizonRange) {
+          sipHorizonRange.max = '30';
+          if (stepupHorizonTicks) {
+            stepupHorizonTicks.innerHTML = '<span>1 Yr</span><span>10 Yrs</span><span>20 Yrs</span><span>30 Yrs</span>';
+          }
+        }
+        recalculateStepUpSIP();
+      });
+    }
+
+    function recalculateStepUpSIP() {
+      const initialMonthly = parseFloat(sipMonthlyRange.value) || 0;
+      const stepUpPercent = parseFloat(sipStepupRange.value) || 0;
+      const years = parseInt(sipHorizonRange.value, 10) || 1;
+
+      if (sipMonthlyVal) sipMonthlyVal.textContent = `${formatINR(initialMonthly)} / month`;
+      if (sipStepupVal) sipStepupVal.textContent = stepUpPercent === 0 ? '0% (Flat SIP)' : `${stepUpPercent.toFixed(0)}% per year`;
+      if (sipHorizonVal) sipHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+
+      if (stepupMode === 'real') {
+        if (!currentStepupSchemeData || isFetchingStepupScheme) {
+          return;
+        }
+
+        try {
+          clearStepupError();
+          const res = calculateRealStepUpSIP({
+            schemeData: currentStepupSchemeData,
+            initialMonthlyAmount: initialMonthly,
+            stepUpPercent,
+            sipDay: stepupSelectedDay,
+            years
+          });
+
+          if (sipBadge) sipBadge.textContent = `${years} Year Historical Step-Up`;
+          if (stepupPeriodDatesChip) stepupPeriodDatesChip.textContent = `${res.firstInstallmentDate} → ${res.latestNavDate}`;
+          if (sipTotalWealth) sipTotalWealth.textContent = formatINR(res.currentValuation);
+          if (sipTotalGain) sipTotalGain.textContent = `${res.netGain >= 0 ? '+' : '-'}${formatINR(Math.abs(res.netGain))}`;
+          if (sipTotalInvested) sipTotalInvested.textContent = formatINR(res.totalInvested);
+          if (sipAdvantage) sipAdvantage.textContent = stepUpPercent === 0 ? 'Flat (0%)' : `+${stepUpPercent.toFixed(0)}% / yr`;
+
+          // Real stat boxes
+          if (stepupRealUnits) stepupRealUnits.textContent = res.totalUnits.toFixed(3);
+          if (stepupRealNavDisplay) stepupRealNavDisplay.textContent = `₹ ${res.latestNav.toFixed(2)} (${res.latestNavDate})`;
+          if (stepupRealAbsReturn) stepupRealAbsReturn.textContent = `${res.absoluteReturnPercent >= 0 ? '+' : ''}${res.absoluteReturnPercent.toFixed(2)}%`;
+          if (stepupRealXirr) stepupRealXirr.textContent = `${res.annualizedReturnPercent.toFixed(2)}% p.a.`;
+          if (stepupRealTxCount) stepupRealTxCount.textContent = `${res.installmentsCount} monthly installments executed`;
+
+          if (stepupRealScheduleList && res.annualSchedule) {
+            stepupRealScheduleList.innerHTML = res.annualSchedule.map(s => 
+              `<span style="background:rgba(200,169,110,0.12); padding:3px 8px; border-radius:4px; border:1px solid rgba(200,169,110,0.25);">Yr ${s.year}: ${formatINR(s.monthlyAmount)}/mo</span>`
+            ).join('');
+          }
+
+          if (sipLegInv) sipLegInv.textContent = formatINR(res.totalInvested);
+          if (sipLegGain) sipLegGain.textContent = formatINR(Math.max(0, res.netGain));
+
+          const invRatio = res.currentValuation > 0 ? Math.min(100, Math.round((res.totalInvested / res.currentValuation) * 100)) : 100;
+          const gainRatio = Math.max(0, 100 - invRatio);
+          if (sipBarInvested) sipBarInvested.style.width = `${invRatio}%`;
+          if (sipBarGains) sipBarGains.style.width = `${gainRatio}%`;
+          if (sipRatioLbl) sipRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+        } catch (err) {
+          showStepupError(err.message || 'Error executing historical simulation.');
+        }
+      } else {
+        // Hypothetical Projection
+        const stepUpDecimal = stepUpPercent / 100;
+        const annualRate = sipRateRange ? (parseFloat(sipRateRange.value) / 100) : 0.13;
+        const monthlyRate = annualRate / 12;
+
+        if (sipRateVal) sipRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.*`;
+        if (sipBadge) sipBadge.textContent = stepUpPercent === 0 ? 'Regular Flat SIP' : `+${stepUpPercent.toFixed(0)}% Annual Step-Up`;
+        if (stepupPeriodDatesChip) stepupPeriodDatesChip.textContent = '';
+
+        let totalInvested = 0;
+        let futureValue = 0;
+        const totalMonths = years * 12;
+
+        for (let m = 1; m <= totalMonths; m++) {
+          const yearIndex = Math.floor((m - 1) / 12);
+          const currentMonthly = initialMonthly * Math.pow(1 + stepUpDecimal, yearIndex);
+          totalInvested += currentMonthly;
+          futureValue += currentMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
+        }
+
+        let flatFV = 0;
+        for (let m = 1; m <= totalMonths; m++) {
+          flatFV += initialMonthly * Math.pow(1 + monthlyRate, totalMonths - m + 1);
+        }
+
+        const totalGain = Math.max(0, futureValue - totalInvested);
+        const advantage = Math.max(0, futureValue - flatFV);
+
+        if (sipTotalWealth) sipTotalWealth.textContent = formatINR(futureValue);
+        if (sipTotalGain) sipTotalGain.textContent = `+${formatINR(totalGain)}`;
+        if (sipTotalInvested) sipTotalInvested.textContent = formatINR(totalInvested);
+        if (sipAdvantage) sipAdvantage.textContent = stepUpPercent === 0 ? '₹ 0 (Base)' : `+${formatINR(advantage)}`;
+        if (sipLegInv) sipLegInv.textContent = formatINR(totalInvested);
+        if (sipLegGain) sipLegGain.textContent = formatINR(totalGain);
+
+        const invRatio = futureValue > 0 ? Math.min(100, Math.round((totalInvested / futureValue) * 100)) : 100;
+        const gainRatio = Math.max(0, 100 - invRatio);
+        if (sipBarInvested) sipBarInvested.style.width = `${invRatio}%`;
+        if (sipBarGains) sipBarGains.style.width = `${gainRatio}%`;
+        if (sipRatioLbl) sipRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+      }
+    }
+
+    sipMonthlyRange.addEventListener('input', recalculateStepUpSIP);
+    sipStepupRange.addEventListener('input', recalculateStepUpSIP);
+    sipHorizonRange.addEventListener('input', recalculateStepUpSIP);
+    if (sipRateRange) sipRateRange.addEventListener('input', recalculateStepUpSIP);
+
+    // Initial calculation in hypothetical mode
+    recalculateStepUpSIP();
   }
 
   // ——— 4. SIP - COST OF DELAY CALCULATOR ———
@@ -1013,7 +1860,7 @@
     calculateSIPTenure();
   }
 
-  // ——— 6. STP CALCULATOR ———
+  // ——— 6. REAL MUTUAL FUND DATA & STP CALCULATOR ———
   const stpSourceRange = document.getElementById('stp-source-range');
   const stpTransferRange = document.getElementById('stp-transfer-range');
   const stpHorizonRange = document.getElementById('stp-horizon-range');
@@ -1033,21 +1880,90 @@
   const stpLegSource = document.getElementById('stp-leg-source');
   const stpRatioLbl = document.getElementById('stp-ratio-lbl');
 
-  if (stpSourceRange && stpTransferRange && stpHorizonRange && stpSourceRateRange && stpTargetRateRange) {
-    function calculateSTP() {
+  // Real STP Elements
+  const stpBtnModeReal = document.getElementById('stp-btn-mode-real');
+  const stpBtnModeHypo = document.getElementById('stp-btn-mode-hypo');
+  const stpRealControls = document.getElementById('stp-real-controls');
+  const stpHypoRatesGroup = document.getElementById('stp-hypo-rates-group');
+  const stpSourceSchemeSelect = document.getElementById('stp-source-scheme-select');
+  const stpTargetSchemeSelect = document.getElementById('stp-target-scheme-select');
+  const stpSourceNavChip = document.getElementById('stp-source-nav-chip');
+  const stpTargetNavChip = document.getElementById('stp-target-nav-chip');
+  const stpRealMetricsGrid = document.getElementById('stp-real-metrics-grid');
+  const stpTargetUnitsVal = document.getElementById('stp-target-units-val');
+  const stpSourceUnitsVal = document.getElementById('stp-source-units-val');
+  const stpAbsGainVal = document.getElementById('stp-abs-gain-val');
+  const stpTransfersCountVal = document.getElementById('stp-transfers-count-val');
+
+  if (stpSourceRange && stpTransferRange && stpHorizonRange) {
+    let stpMode = 'real';
+    let sourceFundData = null;
+    let targetFundData = null;
+
+    // Populate STP Schemes
+    if (stpSourceSchemeSelect && stpTargetSchemeSelect) {
+      const debtSchemes = CURATED_SCHEMES.filter(s => s.type === 'debt');
+      const equitySchemes = CURATED_SCHEMES.filter(s => s.type === 'equity');
+
+      stpSourceSchemeSelect.innerHTML = debtSchemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+      stpTargetSchemeSelect.innerHTML = equitySchemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+
+      async function loadStpData() {
+        const sCode = stpSourceSchemeSelect.value;
+        const tCode = stpTargetSchemeSelect.value;
+        if (stpSourceNavChip) stpSourceNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching...';
+        if (stpTargetNavChip) stpTargetNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching...';
+        try {
+          const [sData, tData] = await Promise.all([
+            fetchSchemeData(sCode),
+            fetchSchemeData(tCode)
+          ]);
+          sourceFundData = sData;
+          targetFundData = tData;
+          if (stpSourceNavChip) stpSourceNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${sData.latestNav.toFixed(2)}`;
+          if (stpTargetNavChip) stpTargetNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${tData.latestNav.toFixed(2)}`;
+          recalculateSTP();
+        } catch (e) {
+          console.error('STP fetch error:', e);
+        }
+      }
+
+      stpSourceSchemeSelect.addEventListener('change', loadStpData);
+      stpTargetSchemeSelect.addEventListener('change', loadStpData);
+      loadStpData();
+    }
+
+    if (stpBtnModeReal && stpBtnModeHypo) {
+      stpBtnModeReal.addEventListener('click', () => {
+        stpMode = 'real';
+        stpBtnModeReal.classList.add('active');
+        stpBtnModeHypo.classList.remove('active');
+        if (stpRealControls) stpRealControls.style.display = 'block';
+        if (stpHypoRatesGroup) stpHypoRatesGroup.style.display = 'none';
+        if (stpRealMetricsGrid) stpRealMetricsGrid.style.display = 'grid';
+        recalculateSTP();
+      });
+
+      stpBtnModeHypo.addEventListener('click', () => {
+        stpMode = 'hypothetical';
+        stpBtnModeHypo.classList.add('active');
+        stpBtnModeReal.classList.remove('active');
+        if (stpRealControls) stpRealControls.style.display = 'none';
+        if (stpHypoRatesGroup) stpHypoRatesGroup.style.display = 'block';
+        if (stpRealMetricsGrid) stpRealMetricsGrid.style.display = 'none';
+        recalculateSTP();
+      });
+    }
+
+    function calculateHypotheticalSTP() {
       const sourceCorpus = parseFloat(stpSourceRange.value);
       const transferMonthly = parseFloat(stpTransferRange.value);
       const years = parseInt(stpHorizonRange.value, 10);
-      const sourceRate = parseFloat(stpSourceRateRange.value) / 100;
-      const targetRate = parseFloat(stpTargetRateRange.value) / 100;
+      const sourceRate = parseFloat(stpSourceRateRange ? stpSourceRateRange.value : 6.5) / 100;
+      const targetRate = parseFloat(stpTargetRateRange ? stpTargetRateRange.value : 13.5) / 100;
       const sourceMonthlyRate = sourceRate / 12;
       const targetMonthlyRate = targetRate / 12;
       const months = years * 12;
-
-      stpSourceVal.textContent = formatINR(sourceCorpus);
-      stpTransferVal.textContent = `${formatINR(transferMonthly)} / month`;
-      stpHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
-      if (stpRatesVal) stpRatesVal.textContent = `${(sourceRate * 100).toFixed(1)}% / ${(targetRate * 100).toFixed(1)}% p.a.*`;
 
       let curSource = sourceCorpus;
       let curTarget = 0;
@@ -1078,15 +1994,63 @@
       if (stpRatioLbl) stpRatioLbl.textContent = `${targetRatio}% Equity : ${sourceRatio}% Debt`;
     }
 
-    stpSourceRange.addEventListener('input', calculateSTP);
-    stpTransferRange.addEventListener('input', calculateSTP);
-    stpHorizonRange.addEventListener('input', calculateSTP);
-    stpSourceRateRange.addEventListener('input', calculateSTP);
-    stpTargetRateRange.addEventListener('input', calculateSTP);
-    calculateSTP();
+    function recalculateSTP() {
+      const sourceCorpus = parseFloat(stpSourceRange.value);
+      const transferMonthly = parseFloat(stpTransferRange.value);
+      const years = parseInt(stpHorizonRange.value, 10);
+
+      stpSourceVal.textContent = formatINR(sourceCorpus);
+      stpTransferVal.textContent = `${formatINR(transferMonthly)} / month`;
+      stpHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+
+      if (stpMode === 'hypothetical' || !sourceFundData || !targetFundData) {
+        calculateHypotheticalSTP();
+        return;
+      }
+
+      // Real Historical STP simulation
+      const result = calculateRealSTP({
+        sourceData: sourceFundData,
+        targetData: targetFundData,
+        initialCorpus: sourceCorpus,
+        monthlyTransfer: transferMonthly,
+        transferDay: 10,
+        years
+      });
+
+      if (stpTotalWealth) stpTotalWealth.textContent = formatINR(result.totalWealth);
+      if (stpNetGain) stpNetGain.textContent = `+${formatINR(result.netGain)}`;
+      if (stpTargetWealth) stpTargetWealth.textContent = formatINR(result.targetValuation);
+      if (stpSourceRem) stpSourceRem.textContent = formatINR(result.remainingSourceValuation);
+
+      if (stpTargetUnitsVal) stpTargetUnitsVal.textContent = `${result.targetUnitsAccumulated.toFixed(2)} units`;
+      if (stpSourceUnitsVal) stpSourceUnitsVal.textContent = `${result.sourceUnitsRemaining.toFixed(2)} units`;
+      if (stpAbsGainVal) stpAbsGainVal.textContent = `+${result.absoluteReturnPercent.toFixed(1)}%`;
+      if (stpTransfersCountVal) stpTransfersCountVal.textContent = `${result.transfersCount} months`;
+
+      if (stpLegTarget) stpLegTarget.textContent = formatINR(result.targetValuation);
+      if (stpLegSource) stpLegSource.textContent = formatINR(result.remainingSourceValuation);
+
+      const targetRatio = result.totalWealth > 0 ? Math.round((result.targetValuation / result.totalWealth) * 100) : 50;
+      const sourceRatio = 100 - targetRatio;
+      if (stpBarTarget) stpBarTarget.style.width = `${targetRatio}%`;
+      if (stpBarSource) stpBarSource.style.width = `${sourceRatio}%`;
+      if (stpRatioLbl) stpRatioLbl.textContent = `${targetRatio}% Equity : ${sourceRatio}% Debt`;
+    }
+
+    stpSourceRange.addEventListener('input', recalculateSTP);
+    stpTransferRange.addEventListener('input', recalculateSTP);
+    stpHorizonRange.addEventListener('input', recalculateSTP);
+    if (stpSourceRateRange) stpSourceRateRange.addEventListener('input', recalculateSTP);
+    if (stpTargetRateRange) stpTargetRateRange.addEventListener('input', recalculateSTP);
+    if (stpBtnModeHypo) {
+      stpBtnModeHypo.click();
+    } else {
+      recalculateSTP();
+    }
   }
 
-  // ——— 7. SWP CALCULATOR ———
+  // ——— 7. REAL MUTUAL FUND DATA & SWP CALCULATOR ———
   const swpCorpusRange = document.getElementById('swp-corpus-range');
   const swpWithdrawRange = document.getElementById('swp-withdraw-range');
   const swpHorizonRange = document.getElementById('swp-horizon-range');
@@ -1104,19 +2068,81 @@
   const swpLegWithdrawn = document.getElementById('swp-leg-withdrawn');
   const swpLegBalance = document.getElementById('swp-leg-balance');
 
-  if (swpCorpusRange && swpWithdrawRange && swpHorizonRange && swpRateRange) {
-    function calculateSWP() {
+  // Real SWP Elements
+  const swpBtnModeReal = document.getElementById('swp-btn-mode-real');
+  const swpBtnModeHypo = document.getElementById('swp-btn-mode-hypo');
+  const swpRealControls = document.getElementById('swp-real-controls');
+  const swpHypoRateGroup = document.getElementById('swp-hypo-rate-group');
+  const swpSchemeSelect = document.getElementById('swp-scheme-select');
+  const swpFundCategory = document.getElementById('swp-fund-category');
+  const swpFundNavChip = document.getElementById('swp-fund-nav-chip');
+  const swpRealMetricsGrid = document.getElementById('swp-real-metrics-grid');
+  const swpUnitsVal = document.getElementById('swp-units-val');
+  const swpNavVal = document.getElementById('swp-nav-val');
+  const swpNetBenefitVal = document.getElementById('swp-net-benefit-val');
+  const swpPayoutsCountVal = document.getElementById('swp-payouts-count-val');
+
+  if (swpCorpusRange && swpWithdrawRange && swpHorizonRange) {
+    let swpMode = 'real';
+    let swpFundData = null;
+
+    if (swpSchemeSelect) {
+      const swpEligibleSchemes = CURATED_SCHEMES.filter(s => s.type === 'hybrid' || s.type === 'equity');
+      swpSchemeSelect.innerHTML = swpEligibleSchemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+
+      async function loadSwpData() {
+        const code = swpSchemeSelect.value;
+        const scheme = CURATED_SCHEMES.find(s => s.code === parseInt(code, 10));
+        if (scheme && swpFundCategory) swpFundCategory.textContent = scheme.category;
+        if (swpFundNavChip) swpFundNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching...';
+        try {
+          const data = await fetchSchemeData(code);
+          swpFundData = data;
+          if (swpFundNavChip) swpFundNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${data.latestNav.toFixed(2)} (${data.latestDate})`;
+          recalculateSWP();
+        } catch (e) {
+          console.error('SWP fetch error:', e);
+        }
+      }
+
+      swpSchemeSelect.addEventListener('change', loadSwpData);
+      loadSwpData();
+    }
+
+    if (swpBtnModeReal && swpBtnModeHypo) {
+      swpBtnModeReal.addEventListener('click', () => {
+        swpMode = 'real';
+        swpBtnModeReal.classList.add('active');
+        swpBtnModeHypo.classList.remove('active');
+        if (swpRealControls) swpRealControls.style.display = 'block';
+        if (swpHypoRateGroup) swpHypoRateGroup.style.display = 'none';
+        if (swpRealMetricsGrid) swpRealMetricsGrid.style.display = 'grid';
+        if (swpHorizonRange) {
+          swpHorizonRange.max = '10';
+          if (parseInt(swpHorizonRange.value, 10) > 10) swpHorizonRange.value = '5';
+        }
+        recalculateSWP();
+      });
+
+      swpBtnModeHypo.addEventListener('click', () => {
+        swpMode = 'hypothetical';
+        swpBtnModeHypo.classList.add('active');
+        swpBtnModeReal.classList.remove('active');
+        if (swpRealControls) swpRealControls.style.display = 'none';
+        if (swpHypoRateGroup) swpHypoRateGroup.style.display = 'block';
+        if (swpRealMetricsGrid) swpRealMetricsGrid.style.display = 'none';
+        if (swpHorizonRange) swpHorizonRange.max = '35';
+        recalculateSWP();
+      });
+    }
+
+    function calculateHypotheticalSWP() {
       const corpusLakhs = parseFloat(swpCorpusRange.value);
       const initialCorpus = corpusLakhs * 100000;
       const monthlyWithdraw = parseFloat(swpWithdrawRange.value);
       const years = parseInt(swpHorizonRange.value, 10);
-      const annualRate = parseFloat(swpRateRange.value) / 100;
+      const annualRate = parseFloat(swpRateRange ? swpRateRange.value : 9) / 100;
       const monthlyRate = annualRate / 12;
-
-      swpCorpusVal.textContent = formatINR(initialCorpus);
-      swpWithdrawVal.textContent = `${formatINR(monthlyWithdraw)} / month`;
-      swpHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
-      swpRateVal.textContent = `${(annualRate * 100).toFixed(1)}% p.a.*`;
 
       let currentBalance = initialCorpus;
       let totalWithdrawn = 0;
@@ -1148,7 +2174,7 @@
           swpHealthBadge.className = 'swp-status-pill warning';
           swpHealthBadge.textContent = `✦ Depletes in ${depYears} Yrs`;
         }
-        if (swpSustainText) swpSustainText.textContent = `Withdrawal rate exceeds portfolio yield`;
+        if (swpSustainText) swpSustainText.textContent = 'Withdrawal rate exceeds portfolio yield';
         if (swpBarWithdrawn) swpBarWithdrawn.style.width = '100%';
         if (swpBarRemaining) swpBarRemaining.style.width = '0%';
       } else {
@@ -1167,11 +2193,75 @@
       }
     }
 
-    swpCorpusRange.addEventListener('input', calculateSWP);
-    swpWithdrawRange.addEventListener('input', calculateSWP);
-    swpHorizonRange.addEventListener('input', calculateSWP);
-    swpRateRange.addEventListener('input', calculateSWP);
-    calculateSWP();
+    function recalculateSWP() {
+      const corpusLakhs = parseFloat(swpCorpusRange.value);
+      const initialCorpus = corpusLakhs * 100000;
+      const monthlyWithdraw = parseFloat(swpWithdrawRange.value);
+      const years = parseInt(swpHorizonRange.value, 10);
+
+      swpCorpusVal.textContent = formatINR(initialCorpus);
+      swpWithdrawVal.textContent = `${formatINR(monthlyWithdraw)} / month`;
+      swpHorizonVal.textContent = `${years} Year${years > 1 ? 's' : ''}`;
+
+      if (swpMode === 'hypothetical' || !swpFundData) {
+        calculateHypotheticalSWP();
+        return;
+      }
+
+      // Real Historical SWP
+      const result = calculateRealSWP({
+        schemeData: swpFundData,
+        initialCorpus,
+        monthlyWithdrawal: monthlyWithdraw,
+        withdrawDay: 10,
+        years
+      });
+
+      if (swpTotalWithdrawn) swpTotalWithdrawn.textContent = formatINR(result.totalWithdrawn);
+      if (swpFinalBalance) swpFinalBalance.textContent = formatINR(result.remainingValuation);
+
+      if (swpUnitsVal) swpUnitsVal.textContent = `${result.remainingUnits.toFixed(2)} units`;
+      if (swpNavVal) swpNavVal.textContent = `₹ ${result.latestNav.toFixed(2)}`;
+      if (swpNetBenefitVal) swpNetBenefitVal.textContent = formatINR(result.netTotalBenefit);
+      if (swpPayoutsCountVal) swpPayoutsCountVal.textContent = `${result.withdrawalsCount} payouts`;
+
+      if (swpLegWithdrawn) swpLegWithdrawn.textContent = formatINR(result.totalWithdrawn);
+      if (swpLegBalance) swpLegBalance.textContent = formatINR(result.remainingValuation);
+
+      if (result.exhaustedAtMonth) {
+        const depYears = (result.exhaustedAtMonth / 12).toFixed(1);
+        if (swpHealthBadge) {
+          swpHealthBadge.className = 'swp-status-pill warning';
+          swpHealthBadge.textContent = `✦ Depleted in Year ${depYears}`;
+        }
+        if (swpSustainText) swpSustainText.textContent = 'Units fully liquidated before term end';
+        if (swpBarWithdrawn) swpBarWithdrawn.style.width = '100%';
+        if (swpBarRemaining) swpBarRemaining.style.width = '0%';
+      } else {
+        const isGrowing = result.remainingValuation >= initialCorpus;
+        if (swpHealthBadge) {
+          swpHealthBadge.className = 'swp-status-pill sustainable';
+          swpHealthBadge.textContent = isGrowing ? '✦ Capital Intact (Growing)' : '✦ Cashflow Sustained';
+        }
+        if (swpSustainText) swpSustainText.textContent = isGrowing ? 'Portfolio NAV growth outpaced withdrawals' : 'Principal comfortably funded withdrawals';
+
+        const totalPool = result.totalWithdrawn + result.remainingValuation;
+        const withRatio = totalPool > 0 ? Math.round((result.totalWithdrawn / totalPool) * 100) : 50;
+        const remRatio = 100 - withRatio;
+        if (swpBarWithdrawn) swpBarWithdrawn.style.width = `${withRatio}%`;
+        if (swpBarRemaining) swpBarRemaining.style.width = `${remRatio}%`;
+      }
+    }
+
+    swpCorpusRange.addEventListener('input', recalculateSWP);
+    swpWithdrawRange.addEventListener('input', recalculateSWP);
+    swpHorizonRange.addEventListener('input', recalculateSWP);
+    if (swpRateRange) swpRateRange.addEventListener('input', recalculateSWP);
+    if (swpBtnModeHypo) {
+      swpBtnModeHypo.click();
+    } else {
+      recalculateSWP();
+    }
   }
 
   // ——— 8. EDUCATION CALCULATOR ———
