@@ -651,6 +651,33 @@
       const hashId = window.location.hash.replace('#', '');
       activateCalcTab(hashId);
     }
+
+    window.addEventListener('hashchange', () => {
+      if (window.location.hash) {
+        const hashId = window.location.hash.replace('#', '');
+        activateCalcTab(hashId);
+      }
+    });
+
+    // Dedicated Wealth Planners section quick-open buttons
+    document.querySelectorAll('[data-open-tab]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetTabId = btn.getAttribute('data-open-tab');
+        if (targetTabId) {
+          e.preventDefault();
+          activateCalcTab(targetTabId);
+          const studioEl = document.getElementById('portfolio-calculators');
+          if (studioEl) {
+            studioEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          const targetTabBtn = document.querySelector(`.calc-tab-btn[data-tab="${targetTabId}"]`);
+          if (targetTabBtn) {
+            targetTabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
+          history.replaceState(null, '', `#${targetTabId}`);
+        }
+      });
+    });
   }
 
   // Currency helper (Indian Lakhs / Crores)
