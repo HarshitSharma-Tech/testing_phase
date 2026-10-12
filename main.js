@@ -1041,9 +1041,9 @@ import {
     sipBasicHorizonRange.addEventListener('input', recalculateSIP);
     if (sipBasicRateRange) sipBasicRateRange.addEventListener('input', recalculateSIP);
 
-    // Default to hypothetical projection mode as per Sections 3 & 4
-    if (sipBtnModeHypo) {
-      sipBtnModeHypo.click();
+    // Default to Real Mutual Fund NAV Data mode so live NAV data is visible on initial load
+    if (sipBtnModeReal) {
+      sipBtnModeReal.click();
     } else {
       recalculateSIP();
     }
@@ -1381,8 +1381,12 @@ import {
     lsHorizonRange.addEventListener('input', recalculateLumpsumSIP);
     if (lsRateRange) lsRateRange.addEventListener('input', recalculateLumpsumSIP);
 
-    // Initial calculation in hypothetical mode
-    recalculateLumpsumSIP();
+    // Default to Real Mutual Fund NAV Data mode so live NAV data is visible on initial load
+    if (lsBtnModeReal) {
+      lsBtnModeReal.click();
+    } else {
+      recalculateLumpsumSIP();
+    }
   }
 
   // ——— 3. STEP-UP SIP CALCULATOR ———
@@ -1733,8 +1737,12 @@ import {
     sipHorizonRange.addEventListener('input', recalculateStepUpSIP);
     if (sipRateRange) sipRateRange.addEventListener('input', recalculateStepUpSIP);
 
-    // Initial calculation in hypothetical mode
-    recalculateStepUpSIP();
+    // Default to Real Mutual Fund NAV Data mode so live NAV data is visible on initial load
+    if (stepupBtnModeReal) {
+      stepupBtnModeReal.click();
+    } else {
+      recalculateStepUpSIP();
+    }
   }
 
   // ——— 4. SIP - COST OF DELAY CALCULATOR ———
@@ -2043,8 +2051,9 @@ import {
     stpHorizonRange.addEventListener('input', recalculateSTP);
     if (stpSourceRateRange) stpSourceRateRange.addEventListener('input', recalculateSTP);
     if (stpTargetRateRange) stpTargetRateRange.addEventListener('input', recalculateSTP);
-    if (stpBtnModeHypo) {
-      stpBtnModeHypo.click();
+    // Default to Real Historical NAV Data mode so live NAV data is visible on initial load
+    if (stpBtnModeReal) {
+      stpBtnModeReal.click();
     } else {
       recalculateSTP();
     }
@@ -2257,8 +2266,9 @@ import {
     swpWithdrawRange.addEventListener('input', recalculateSWP);
     swpHorizonRange.addEventListener('input', recalculateSWP);
     if (swpRateRange) swpRateRange.addEventListener('input', recalculateSWP);
-    if (swpBtnModeHypo) {
-      swpBtnModeHypo.click();
+    // Default to Real Historical NAV Data mode so live NAV data is visible on initial load
+    if (swpBtnModeReal) {
+      swpBtnModeReal.click();
     } else {
       recalculateSWP();
     }
