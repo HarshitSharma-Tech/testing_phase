@@ -556,7 +556,7 @@ import {
   });
 
   // ——— COUNTER ANIMATION ———
-  function animateCounter(el, target, duration = 1800) {
+  function animateCounter(el, target, duration = 1800, suffix = '') {
     const isDecimal = target % 1 !== 0;
     const start = performance.now();
     function step(now) {
@@ -564,9 +564,9 @@ import {
       const progress = Math.min(elapsed / duration, 1);
       const ease = 1 - Math.pow(1 - progress, 3);
       const val = target * ease;
-      el.textContent = isDecimal ? val.toFixed(1) : Math.floor(val).toLocaleString();
+      el.textContent = (isDecimal ? val.toFixed(1) : Math.floor(val).toLocaleString()) + suffix;
       if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = target.toLocaleString();
+      else el.textContent = target.toLocaleString() + suffix;
     }
     requestAnimationFrame(step);
   }
@@ -577,9 +577,15 @@ import {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const el = entry.target;
-          const raw = el.textContent.replace(/[^0-9.]/g, '');
+          const original = el.textContent.trim();
+          if (original.includes('ARN') || original === '2010') {
+            statObs.unobserve(el);
+            return;
+          }
+          const suffix = original.includes('+') ? '+' : '';
+          const raw = original.replace(/[^0-9.]/g, '');
           const num = parseFloat(raw);
-          if (!isNaN(num)) animateCounter(el, num);
+          if (!isNaN(num)) animateCounter(el, num, 1800, suffix);
           statObs.unobserve(el);
         }
       });
@@ -682,17 +688,7 @@ import {
           e.preventDefault();
           activateCalcTab(targetTabId);
 
-          // Dedicated Wealth Planners automatically open in Real Historical Mode
-          if (targetTabId === 'sip-basic-tab') {
-            const sipRealBtn = document.getElementById('sip-btn-mode-real');
-            if (sipRealBtn) sipRealBtn.click();
-          } else if (targetTabId === 'stp-calc-tab') {
-            const stpRealBtn = document.getElementById('stp-btn-mode-real');
-            if (stpRealBtn) stpRealBtn.click();
-          } else if (targetTabId === 'swp-calc-tab') {
-            const swpRealBtn = document.getElementById('swp-btn-mode-real');
-            if (swpRealBtn) swpRealBtn.click();
-          }
+          // Keep simple, user-friendly calculator model active by default
 
           const studioEl = document.getElementById('portfolio-calculators');
           if (studioEl) {
@@ -727,6 +723,515 @@ import {
     }
     return isNeg ? `-${str}` : str;
   }
+
+  // ——— INLINE WEALTH PLANNERS (SIP, STP, SWP) ———
+  // Expands interactive planner directly inside each dedicated planner card without scrolling or page jump
+  function initInlinePlanners() {
+    const inlineBtns = document.querySelectorAll('[data-inline-planner]');
+    if (!inlineBtns.length) return;
+
+    inlineBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const type = btn.getAttribute('data-inline-planner');
+        const drawer = document.getElementById(`inline-${type}-planner`);
+        if (!drawer) return;
+
+        const isOpen = drawer.style.display === 'block';
+        const textSpan = btn.querySelector('.btn-text');
+        const cardTitle = type.toUpperCase();
+
+        if (isOpen) {
+          drawer.style.display = 'none';
+          btn.classList.remove('active');
+          if (textSpan) textSpan.textContent = `Open ${cardTitle} Planner`;
+        } else {
+          drawer.style.display = 'block';
+          btn.classList.add('active');
+          if (textSpan) textSpan.textContent = `Close ${cardTitle} Planner`;
+        }
+      });
+    });
+
+    // Helper to fill slider track in rich gold as user drags
+    function updateRangeFill(slider) {
+      if (!slider) return;
+      const min = parseFloat(slider.min) || 0;
+      const max = parseFloat(slider.max) || 100;
+      const val = parseFloat(slider.value) || min;
+      const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+      slider.style.background = `linear-gradient(to right, #C8A96E 0%, #C8A96E ${pct}%, rgba(200, 169, 110, 0.2) ${pct}%, rgba(200, 169, 110, 0.2) 100%)`;
+    }
+
+    // ----------------------------------------------------
+    // 1. INLINE SIP PLANNER (Hypothetical & Real NAV)
+    // ----------------------------------------------------
+    let inSipMode = 'hypothetical';
+    let inSipRealData = null;
+    const inSipBtnModeReal = document.getElementById('in-sip-btn-mode-real');
+    const inSipBtnModeHypo = document.getElementById('in-sip-btn-mode-hypo');
+    const inSipRealControls = document.getElementById('in-sip-real-controls');
+    const inSipStepupGroup = document.getElementById('in-sip-stepup-group');
+    const inSipRateGroup = document.getElementById('in-sip-rate-group');
+    const inSipSchemeSelect = document.getElementById('in-sip-scheme-select');
+    const inSipFundCat = document.getElementById('in-sip-fund-cat');
+    const inSipNavChip = document.getElementById('in-sip-nav-chip');
+    const inSipResultLbl = document.getElementById('in-sip-result-lbl');
+    const inSipGainLbl = document.getElementById('in-sip-gain-lbl');
+
+    const inSipMonthly = document.getElementById('in-sip-monthly');
+    const inSipStepup = document.getElementById('in-sip-stepup');
+    const inSipRate = document.getElementById('in-sip-rate');
+    const inSipYears = document.getElementById('in-sip-years');
+    const inSipMonthlyVal = document.getElementById('in-sip-monthly-val');
+    const inSipStepupVal = document.getElementById('in-sip-stepup-val');
+    const inSipRateVal = document.getElementById('in-sip-rate-val');
+    const inSipYearsVal = document.getElementById('in-sip-years-val');
+    const inSipTotalWealth = document.getElementById('in-sip-total-wealth');
+    const inSipInvested = document.getElementById('in-sip-invested');
+    const inSipGain = document.getElementById('in-sip-gain');
+
+    if (inSipSchemeSelect) {
+      const growthSchemes = CURATED_SCHEMES.filter(s => s.type === 'equity' || s.type === 'hybrid');
+      inSipSchemeSelect.innerHTML = growthSchemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+
+      async function loadInSipScheme() {
+        const code = parseInt(inSipSchemeSelect.value, 10);
+        const schemeObj = CURATED_SCHEMES.find(s => s.code === code);
+        if (schemeObj && inSipFundCat) inSipFundCat.textContent = schemeObj.category || 'Equity: Growth';
+        if (inSipNavChip) inSipNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching...';
+        try {
+          inSipRealData = await fetchSchemeData(code);
+          if (inSipNavChip && inSipRealData) {
+            inSipNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${inSipRealData.latestNav.toFixed(2)}`;
+          }
+          if (inSipMode === 'real') calcInlineSIP();
+        } catch (e) {
+          console.error('Error fetching inline SIP fund:', e);
+          if (inSipNavChip) inSipNavChip.innerHTML = 'NAV: Offline Mode';
+        }
+      }
+
+      inSipSchemeSelect.addEventListener('change', loadInSipScheme);
+      loadInSipScheme();
+    }
+
+    if (inSipBtnModeReal && inSipBtnModeHypo) {
+      inSipBtnModeReal.addEventListener('click', () => {
+        inSipMode = 'real';
+        inSipBtnModeReal.classList.add('active');
+        inSipBtnModeHypo.classList.remove('active');
+        if (inSipRealControls) inSipRealControls.style.display = 'block';
+        if (inSipStepupGroup) inSipStepupGroup.style.display = 'none';
+        if (inSipRateGroup) inSipRateGroup.style.display = 'none';
+        if (inSipResultLbl) inSipResultLbl.textContent = 'Actual Historical Wealth';
+        if (inSipGainLbl) inSipGainLbl.textContent = 'Realized Gain (CAGR)';
+        calcInlineSIP();
+      });
+
+      inSipBtnModeHypo.addEventListener('click', () => {
+        inSipMode = 'hypothetical';
+        inSipBtnModeHypo.classList.add('active');
+        inSipBtnModeReal.classList.remove('active');
+        if (inSipRealControls) inSipRealControls.style.display = 'none';
+        if (inSipStepupGroup) inSipStepupGroup.style.display = 'block';
+        if (inSipRateGroup) inSipRateGroup.style.display = 'block';
+        if (inSipResultLbl) inSipResultLbl.textContent = 'Projected Wealth';
+        if (inSipGainLbl) inSipGainLbl.textContent = 'Estimated Gain';
+        calcInlineSIP();
+      });
+    }
+
+    function calcInlineSIP() {
+      if (!inSipMonthly || !inSipRate || !inSipYears) return;
+      const P = parseFloat(inSipMonthly.value) || 25000;
+      const stepPct = inSipStepup ? (parseFloat(inSipStepup.value) || 0) : 0;
+      const r = (parseFloat(inSipRate.value) || 13) / 100 / 12;
+      const years = parseInt(inSipYears.value, 10) || 10;
+      const n = years * 12;
+
+      if (inSipMonthlyVal) inSipMonthlyVal.textContent = `${formatINR(P)} / mo`;
+      if (inSipStepupVal) inSipStepupVal.textContent = stepPct === 0 ? '0% (Flat SIP)' : `+${stepPct}% / yr`;
+      if (inSipRateVal) inSipRateVal.textContent = `${(parseFloat(inSipRate.value) || 13).toFixed(1)}% p.a.`;
+      if (inSipYearsVal) inSipYearsVal.textContent = `${years} Years`;
+
+      if (inSipMode === 'real' && inSipRealData) {
+        try {
+          const simYears = Math.min(years, 10);
+          const realRes = calculateRealSIP({
+            schemeData: inSipRealData,
+            monthlyAmount: P,
+            sipDay: 1,
+            years: simYears,
+            allowPartial: true
+          });
+          if (inSipTotalWealth) inSipTotalWealth.textContent = formatINR(realRes.currentValuation);
+          if (inSipInvested) inSipInvested.textContent = formatINR(realRes.totalInvested);
+          if (inSipGain) inSipGain.textContent = `+${formatINR(realRes.netGain)} (${realRes.xirr.toFixed(1)}% CAGR)`;
+        } catch (err) {
+          console.warn('Real SIP calculation error, falling back to hypothetical:', err);
+          runHypoCalc();
+        }
+      } else {
+        runHypoCalc();
+      }
+
+      function runHypoCalc() {
+        let invested = 0;
+        let maturity = 0;
+        if (stepPct === 0) {
+          invested = P * n;
+          maturity = r > 0 ? P * ((Math.pow(1 + r, n) - 1) / r) * (1 + r) : invested;
+        } else {
+          const stepRate = stepPct / 100;
+          let currentP = P;
+          for (let y = 1; y <= years; y++) {
+            for (let m = 1; m <= 12; m++) {
+              const monthsRemaining = n - ((y - 1) * 12 + m) + 1;
+              invested += currentP;
+              maturity += currentP * Math.pow(1 + r, monthsRemaining);
+            }
+            currentP *= (1 + stepRate);
+          }
+        }
+        const gains = Math.max(0, maturity - invested);
+        if (inSipTotalWealth) inSipTotalWealth.textContent = formatINR(maturity);
+        if (inSipInvested) inSipInvested.textContent = formatINR(invested);
+        if (inSipGain) inSipGain.textContent = `+${formatINR(gains)}`;
+      }
+
+      updateRangeFill(inSipMonthly);
+      if (inSipStepup) updateRangeFill(inSipStepup);
+      updateRangeFill(inSipRate);
+      updateRangeFill(inSipYears);
+    }
+
+    if (inSipMonthly) inSipMonthly.addEventListener('input', calcInlineSIP);
+    if (inSipStepup) inSipStepup.addEventListener('input', calcInlineSIP);
+    if (inSipRate) inSipRate.addEventListener('input', calcInlineSIP);
+    if (inSipYears) inSipYears.addEventListener('input', calcInlineSIP);
+    calcInlineSIP();
+
+    // ----------------------------------------------------
+    // 2. INLINE STP PLANNER (Hypothetical & Real NAV)
+    // ----------------------------------------------------
+    let inStpMode = 'hypothetical';
+    let inStpSourceData = null;
+    let inStpTargetData = null;
+    const inStpBtnModeReal = document.getElementById('in-stp-btn-mode-real');
+    const inStpBtnModeHypo = document.getElementById('in-stp-btn-mode-hypo');
+    const inStpRealControls = document.getElementById('in-stp-real-controls');
+    const inStpRateGroup = document.getElementById('in-stp-rate-group');
+    const inStpSourceSelect = document.getElementById('in-stp-source-select');
+    const inStpTargetSelect = document.getElementById('in-stp-target-select');
+    const inStpSourceChip = document.getElementById('in-stp-source-chip');
+    const inStpTargetChip = document.getElementById('in-stp-target-chip');
+    const inStpResultLbl = document.getElementById('in-stp-result-lbl');
+    const inStpAlphaLbl = document.getElementById('in-stp-alpha-lbl');
+
+    const inStpLump = document.getElementById('in-stp-lump');
+    const inStpMonthly = document.getElementById('in-stp-monthly');
+    const inStpMonths = document.getElementById('in-stp-months');
+    const inStpRate = document.getElementById('in-stp-rate');
+    const inStpLumpVal = document.getElementById('in-stp-lump-val');
+    const inStpMonthlyVal = document.getElementById('in-stp-monthly-val');
+    const inStpMonthsVal = document.getElementById('in-stp-months-val');
+    const inStpRateVal = document.getElementById('in-stp-rate-val');
+    const inStpTotal = document.getElementById('in-stp-total');
+    const inStpDeployed = document.getElementById('in-stp-deployed');
+    const inStpAlpha = document.getElementById('in-stp-alpha');
+
+    if (inStpSourceSelect && inStpTargetSelect) {
+      const debtSchemes = CURATED_SCHEMES.filter(s => s.type === 'debt');
+      const equitySchemes = CURATED_SCHEMES.filter(s => s.type === 'equity');
+      inStpSourceSelect.innerHTML = debtSchemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+      inStpTargetSelect.innerHTML = equitySchemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+
+      async function loadInStpSchemes() {
+        const sCode = parseInt(inStpSourceSelect.value, 10);
+        const tCode = parseInt(inStpTargetSelect.value, 10);
+        if (inStpSourceChip) inStpSourceChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching...';
+        if (inStpTargetChip) inStpTargetChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching...';
+        try {
+          const [sData, tData] = await Promise.all([
+            fetchSchemeData(sCode),
+            fetchSchemeData(tCode)
+          ]);
+          inStpSourceData = sData;
+          inStpTargetData = tData;
+          if (inStpSourceChip) inStpSourceChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${sData.latestNav.toFixed(2)}`;
+          if (inStpTargetChip) inStpTargetChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${tData.latestNav.toFixed(2)}`;
+          if (inStpMode === 'real') calcInlineSTP();
+        } catch (e) {
+          console.error('Error fetching inline STP schemes:', e);
+          if (inStpSourceChip) inStpSourceChip.innerHTML = 'NAV: Offline';
+          if (inStpTargetChip) inStpTargetChip.innerHTML = 'NAV: Offline';
+        }
+      }
+
+      inStpSourceSelect.addEventListener('change', loadInStpSchemes);
+      inStpTargetSelect.addEventListener('change', loadInStpSchemes);
+      loadInStpSchemes();
+    }
+
+    if (inStpBtnModeReal && inStpBtnModeHypo) {
+      inStpBtnModeReal.addEventListener('click', () => {
+        inStpMode = 'real';
+        inStpBtnModeReal.classList.add('active');
+        inStpBtnModeHypo.classList.remove('active');
+        if (inStpRealControls) inStpRealControls.style.display = 'block';
+        if (inStpRateGroup) inStpRateGroup.style.display = 'none';
+        if (inStpResultLbl) inStpResultLbl.textContent = 'Actual Historical STP Value';
+        if (inStpAlphaLbl) inStpAlphaLbl.textContent = 'Real Portfolio Alpha';
+        calcInlineSTP();
+      });
+
+      inStpBtnModeHypo.addEventListener('click', () => {
+        inStpMode = 'hypothetical';
+        inStpBtnModeHypo.classList.add('active');
+        inStpBtnModeReal.classList.remove('active');
+        if (inStpRealControls) inStpRealControls.style.display = 'none';
+        if (inStpRateGroup) inStpRateGroup.style.display = 'block';
+        if (inStpResultLbl) inStpResultLbl.textContent = 'Projected Value Post-STP';
+        if (inStpAlphaLbl) inStpAlphaLbl.textContent = 'Estimated Alpha';
+        calcInlineSTP();
+      });
+    }
+
+    function calcInlineSTP() {
+      if (!inStpLump || !inStpMonthly || !inStpMonths || !inStpRate) return;
+      const lump = parseFloat(inStpLump.value) || 1000000;
+      const transfer = parseFloat(inStpMonthly.value) || 50000;
+      const months = parseInt(inStpMonths.value, 10) || 20;
+      const rEq = (parseFloat(inStpRate.value) || 13) / 100 / 12;
+      const rDebt = 0.065 / 12;
+
+      if (inStpLumpVal) inStpLumpVal.textContent = formatINR(lump);
+      if (inStpMonthlyVal) inStpMonthlyVal.textContent = `${formatINR(transfer)} / mo`;
+      if (inStpMonthsVal) inStpMonthsVal.textContent = `${months} Months`;
+      if (inStpRateVal) inStpRateVal.textContent = `${(parseFloat(inStpRate.value) || 13).toFixed(1)}% p.a.`;
+
+      if (inStpMode === 'real' && inStpSourceData && inStpTargetData) {
+        try {
+          const realRes = calculateRealSTP({
+            sourceData: inStpSourceData,
+            targetData: inStpTargetData,
+            initialCorpus: lump,
+            monthlyTransfer: transfer,
+            transferDay: 1,
+            months: months
+          });
+          if (inStpTotal) inStpTotal.textContent = formatINR(realRes.totalWealth);
+          if (inStpDeployed) inStpDeployed.textContent = formatINR(realRes.totalTransferred);
+          if (inStpAlpha) inStpAlpha.textContent = `+${formatINR(realRes.netGain)}`;
+        } catch (err) {
+          console.warn('Real STP calculation error, falling back to hypothetical:', err);
+          runHypoSTP();
+        }
+      } else {
+        runHypoSTP();
+      }
+
+      function runHypoSTP() {
+        let debtBalance = lump;
+        let equityBalance = 0;
+        let totalTransferred = 0;
+
+        for (let m = 1; m <= months; m++) {
+          debtBalance = debtBalance * (1 + rDebt);
+          const actualTransfer = Math.min(transfer, Math.max(0, debtBalance));
+          debtBalance -= actualTransfer;
+          totalTransferred += actualTransfer;
+          equityBalance = (equityBalance + actualTransfer) * (1 + rEq);
+        }
+
+        const finalTotal = debtBalance + equityBalance;
+        const alpha = Math.max(0, finalTotal - lump);
+
+        if (inStpTotal) inStpTotal.textContent = formatINR(finalTotal);
+        if (inStpDeployed) inStpDeployed.textContent = formatINR(totalTransferred);
+        if (inStpAlpha) inStpAlpha.textContent = `+${formatINR(alpha)}`;
+      }
+
+      updateRangeFill(inStpLump);
+      updateRangeFill(inStpMonthly);
+      updateRangeFill(inStpMonths);
+      updateRangeFill(inStpRate);
+    }
+
+    if (inStpLump) inStpLump.addEventListener('input', calcInlineSTP);
+    if (inStpMonthly) inStpMonthly.addEventListener('input', calcInlineSTP);
+    if (inStpMonths) inStpMonths.addEventListener('input', calcInlineSTP);
+    if (inStpRate) inStpRate.addEventListener('input', calcInlineSTP);
+    calcInlineSTP();
+
+    // ----------------------------------------------------
+    // 3. INLINE SWP PLANNER (Hypothetical & Real NAV)
+    // ----------------------------------------------------
+    let inSwpMode = 'hypothetical';
+    let inSwpRealData = null;
+    const inSwpBtnModeReal = document.getElementById('in-swp-btn-mode-real');
+    const inSwpBtnModeHypo = document.getElementById('in-swp-btn-mode-hypo');
+    const inSwpRealControls = document.getElementById('in-swp-real-controls');
+    const inSwpRateGroup = document.getElementById('in-swp-rate-group');
+    const inSwpSchemeSelect = document.getElementById('in-swp-scheme-select');
+    const inSwpFundCat = document.getElementById('in-swp-fund-cat');
+    const inSwpNavChip = document.getElementById('in-swp-nav-chip');
+    const inSwpResultLbl = document.getElementById('in-swp-result-lbl');
+    const inSwpHealthLbl = document.getElementById('in-swp-health-lbl');
+
+    const inSwpCorpus = document.getElementById('in-swp-corpus');
+    const inSwpMonthly = document.getElementById('in-swp-monthly');
+    const inSwpRate = document.getElementById('in-swp-rate');
+    const inSwpYears = document.getElementById('in-swp-years');
+    const inSwpCorpusVal = document.getElementById('in-swp-corpus-val');
+    const inSwpMonthlyVal = document.getElementById('in-swp-monthly-val');
+    const inSwpRateVal = document.getElementById('in-swp-rate-val');
+    const inSwpYearsVal = document.getElementById('in-swp-years-val');
+    const inSwpRemaining = document.getElementById('in-swp-remaining');
+    const inSwpWithdrawn = document.getElementById('in-swp-withdrawn');
+    const inSwpHealth = document.getElementById('in-swp-health');
+
+    if (inSwpSchemeSelect) {
+      const swpSchemes = CURATED_SCHEMES.filter(s => s.type === 'hybrid' || s.type === 'equity');
+      inSwpSchemeSelect.innerHTML = swpSchemes.map(s => `<option value="${s.code}">${s.name}</option>`).join('');
+
+      async function loadInSwpScheme() {
+        const code = parseInt(inSwpSchemeSelect.value, 10);
+        const schemeObj = CURATED_SCHEMES.find(s => s.code === code);
+        if (schemeObj && inSwpFundCat) inSwpFundCat.textContent = schemeObj.category || 'Hybrid: Dynamic Allocation';
+        if (inSwpNavChip) inSwpNavChip.innerHTML = '<span class="pulse-dot"></span> NAV: Fetching...';
+        try {
+          inSwpRealData = await fetchSchemeData(code);
+          if (inSwpNavChip && inSwpRealData) {
+            inSwpNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${inSwpRealData.latestNav.toFixed(2)}`;
+          }
+          if (inSwpMode === 'real') calcInlineSWP();
+        } catch (e) {
+          console.error('Error fetching inline SWP scheme:', e);
+          if (inSwpNavChip) inSwpNavChip.innerHTML = 'NAV: Offline';
+        }
+      }
+
+      inSwpSchemeSelect.addEventListener('change', loadInSwpScheme);
+      loadInSwpScheme();
+    }
+
+    if (inSwpBtnModeReal && inSwpBtnModeHypo) {
+      inSwpBtnModeReal.addEventListener('click', () => {
+        inSwpMode = 'real';
+        inSwpBtnModeReal.classList.add('active');
+        inSwpBtnModeHypo.classList.remove('active');
+        if (inSwpRealControls) inSwpRealControls.style.display = 'block';
+        if (inSwpRateGroup) inSwpRateGroup.style.display = 'none';
+        if (inSwpResultLbl) inSwpResultLbl.textContent = 'Actual Remaining Corpus';
+        if (inSwpHealthLbl) inSwpHealthLbl.textContent = 'Corpus Health / Benefit';
+        calcInlineSWP();
+      });
+
+      inSwpBtnModeHypo.addEventListener('click', () => {
+        inSwpMode = 'hypothetical';
+        inSwpBtnModeHypo.classList.add('active');
+        inSwpBtnModeReal.classList.remove('active');
+        if (inSwpRealControls) inSwpRealControls.style.display = 'none';
+        if (inSwpRateGroup) inSwpRateGroup.style.display = 'block';
+        if (inSwpResultLbl) inSwpResultLbl.textContent = 'Final Remaining Capital';
+        if (inSwpHealthLbl) inSwpHealthLbl.textContent = 'Corpus Health';
+        calcInlineSWP();
+      });
+    }
+
+    function calcInlineSWP() {
+      if (!inSwpCorpus || !inSwpMonthly || !inSwpRate || !inSwpYears) return;
+      const corpus = parseFloat(inSwpCorpus.value) || 10000000;
+      const withdrawal = parseFloat(inSwpMonthly.value) || 60000;
+      const r = (parseFloat(inSwpRate.value) || 9) / 100 / 12;
+      const years = parseInt(inSwpYears.value, 10) || 15;
+      const months = years * 12;
+
+      if (inSwpCorpusVal) inSwpCorpusVal.textContent = formatINR(corpus);
+      if (inSwpMonthlyVal) inSwpMonthlyVal.textContent = `${formatINR(withdrawal)} / mo`;
+      if (inSwpRateVal) inSwpRateVal.textContent = `${(parseFloat(inSwpRate.value) || 9).toFixed(1)}% p.a.`;
+      if (inSwpYearsVal) inSwpYearsVal.textContent = `${years} Years`;
+
+      if (inSwpMode === 'real' && inSwpRealData) {
+        try {
+          const simYears = Math.min(years, 10);
+          const realRes = calculateRealSWP({
+            schemeData: inSwpRealData,
+            initialCorpus: corpus,
+            monthlyWithdrawal: withdrawal,
+            withdrawDay: 1,
+            years: simYears
+          });
+          if (inSwpRemaining) inSwpRemaining.textContent = formatINR(realRes.remainingValuation);
+          if (inSwpWithdrawn) inSwpWithdrawn.textContent = formatINR(realRes.totalWithdrawn);
+          if (inSwpHealth) {
+            if (realRes.exhaustedAtMonth) {
+              const yearsLasted = (realRes.exhaustedAtMonth / 12).toFixed(1);
+              inSwpHealth.textContent = `Exhausted in ${yearsLasted} Yrs ⚠`;
+              inSwpHealth.style.color = '#ef4444';
+            } else {
+              inSwpHealth.textContent = `Fully Funded (${formatINR(realRes.netTotalBenefit)}) ✓`;
+              inSwpHealth.style.color = 'var(--gold-champagne)';
+            }
+          }
+        } catch (err) {
+          console.warn('Real SWP calculation error, falling back to hypothetical:', err);
+          runHypoSWP();
+        }
+      } else {
+        runHypoSWP();
+      }
+
+      function runHypoSWP() {
+        let balance = corpus;
+        let totalPaid = 0;
+        let depletedMonth = 0;
+
+        for (let m = 1; m <= months; m++) {
+          balance = balance * (1 + r);
+          if (balance >= withdrawal) {
+            balance -= withdrawal;
+            totalPaid += withdrawal;
+          } else {
+            totalPaid += Math.max(0, balance);
+            balance = 0;
+            depletedMonth = m;
+            break;
+          }
+        }
+
+        if (inSwpRemaining) inSwpRemaining.textContent = formatINR(balance);
+        if (inSwpWithdrawn) inSwpWithdrawn.textContent = formatINR(totalPaid);
+        if (inSwpHealth) {
+          if (depletedMonth > 0) {
+            const yearsLasted = (depletedMonth / 12).toFixed(1);
+            inSwpHealth.textContent = `Exhausts in ${yearsLasted} Yrs ⚠`;
+            inSwpHealth.style.color = '#ef4444';
+          } else {
+            inSwpHealth.textContent = `100% Sustainable ✓`;
+            inSwpHealth.style.color = 'var(--gold-champagne)';
+          }
+        }
+      }
+
+      updateRangeFill(inSwpCorpus);
+      updateRangeFill(inSwpMonthly);
+      updateRangeFill(inSwpRate);
+      updateRangeFill(inSwpYears);
+    }
+
+    if (inSwpCorpus) inSwpCorpus.addEventListener('input', calcInlineSWP);
+    if (inSwpMonthly) inSwpMonthly.addEventListener('input', calcInlineSWP);
+    if (inSwpRate) inSwpRate.addEventListener('input', calcInlineSWP);
+    if (inSwpYears) inSwpYears.addEventListener('input', calcInlineSWP);
+    calcInlineSWP();
+  }
+
+  // Initialize inline planners
+  initInlinePlanners();
 
   // ——— 1. REAL MUTUAL FUND DATA & BASIC SIP CALCULATOR ———
   const sipBasicMonthlyRange = document.getElementById('sip-basic-monthly-range');
@@ -772,6 +1277,260 @@ import {
   const sipSchemeSearchBtn = document.getElementById('sip-scheme-search-btn');
 
   if (sipBasicMonthlyRange && sipBasicHorizonRange) {
+    // Helper: HTML escaping for safe injection
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Helper: Mathematically position slider tick labels directly under thumb positions
+    function updateSliderTicks(containerId, min, max, desiredTicks, formatFn) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.classList.add('positioned-ticks');
+      container.innerHTML = '';
+
+      const validTicks = desiredTicks.filter(v => v >= min && v <= max);
+      if (!validTicks.includes(min)) validTicks.unshift(min);
+      if (!validTicks.includes(max)) validTicks.push(max);
+      validTicks.sort((a, b) => a - b);
+
+      const uniqueTicks = Array.from(new Set(validTicks));
+
+      uniqueTicks.forEach((val, idx) => {
+        const span = document.createElement('span');
+        span.textContent = formatFn ? formatFn(val) : `${val}`;
+        if (idx === 0) {
+          span.className = 'tick-first';
+          span.style.left = '0%';
+        } else if (idx === uniqueTicks.length - 1) {
+          span.className = 'tick-last';
+          span.style.right = '0%';
+        } else {
+          const pct = ((val - min) / (max - min)) * 100;
+          span.style.left = `${pct.toFixed(2)}%`;
+        }
+        container.appendChild(span);
+      });
+    }
+
+    function syncSipHorizonTicks(maxYears) {
+      const container = document.getElementById('sip-horizon-ticks');
+      if (!container) return;
+      const range = document.getElementById('sip-basic-horizon-range');
+      const max = maxYears || (range ? parseInt(range.max, 10) : (sipMode === 'real' ? 10 : 35));
+      const min = range ? parseInt(range.min, 10) : 1;
+
+      let ticks = [];
+      if (max <= 5) {
+        ticks = [1, 2, 3, 4, 5].filter(v => v <= max);
+      } else if (max <= 10) {
+        ticks = [1, 3, 5, 7, 10].filter(v => v <= max);
+      } else if (max <= 15) {
+        ticks = [1, 3, 5, 10, 15].filter(v => v <= max);
+      } else if (max <= 25) {
+        ticks = [1, 5, 10, 15, 20, 25].filter(v => v <= max);
+      } else {
+        ticks = [1, 5, 10, 15, 20, 25, 30, 35].filter(v => v <= max);
+      }
+      updateSliderTicks('sip-horizon-ticks', min, max, ticks, v => `${v} Yr${v > 1 ? 's' : ''}`);
+    }
+
+    function syncLsHorizonTicks(maxYears) {
+      const container = document.getElementById('ls-horizon-ticks');
+      if (!container) return;
+      const range = document.getElementById('ls-horizon-range');
+      const max = maxYears || (range ? parseInt(range.max, 10) : 30);
+      const min = range ? parseInt(range.min, 10) : 1;
+      let ticks = [];
+      if (max <= 5) {
+        ticks = [1, 2, 3, 4, 5].filter(v => v <= max);
+      } else if (max <= 10) {
+        ticks = [1, 3, 5, 7, 10].filter(v => v <= max);
+      } else {
+        ticks = [1, 5, 10, 15, 20, 25, 30].filter(v => v <= max);
+      }
+      updateSliderTicks('ls-horizon-ticks', min, max, ticks, v => `${v} Yr${v > 1 ? 's' : ''}`);
+    }
+
+    function syncStepupHorizonTicks(maxYears) {
+      const container = document.getElementById('stepup-horizon-ticks');
+      if (!container) return;
+      const range = document.getElementById('sip-horizon-range');
+      const max = maxYears || (range ? parseInt(range.max, 10) : 30);
+      const min = range ? parseInt(range.min, 10) : 1;
+      let ticks = [];
+      if (max <= 5) {
+        ticks = [1, 2, 3, 4, 5].filter(v => v <= max);
+      } else if (max <= 10) {
+        ticks = [1, 3, 5, 7, 10].filter(v => v <= max);
+      } else {
+        ticks = [1, 5, 10, 15, 20, 25, 30].filter(v => v <= max);
+      }
+      updateSliderTicks('stepup-horizon-ticks', min, max, ticks, v => `${v} Yr${v > 1 ? 's' : ''}`);
+    }
+
+    // Helper: Luxury Autosuggestion Dropdown Engine
+    function initSchemeAutosuggest({ inputId, dropdownId, selectId, amcSelectId, onSelectCallback }) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      const select = document.getElementById(selectId);
+      const amcSelect = amcSelectId ? document.getElementById(amcSelectId) : null;
+      if (!input || !dropdown) return;
+
+      let debounceTimer = null;
+      let selectedIndex = -1;
+      let currentItems = [];
+
+      function closeDropdown() {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        selectedIndex = -1;
+        currentItems = [];
+      }
+
+      function renderItems(items, query) {
+        currentItems = items;
+        selectedIndex = -1;
+        if (!items.length) {
+          dropdown.innerHTML = `<div class="autosuggest-empty">No Direct Growth funds matching "${escapeHtml(query)}"</div>`;
+          dropdown.style.display = 'block';
+          return;
+        }
+
+        dropdown.innerHTML = items.map((item, idx) => {
+          const qRegex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+          const highlightedName = escapeHtml(item.name).replace(qRegex, '<mark>$1</mark>');
+          const amcName = CURATED_AMCS.find(a => a.id === item.amc)?.name || item.amc || '';
+          return `
+            <div class="autosuggest-item" data-index="${idx}" data-code="${item.code}">
+              <div class="autosuggest-item-name">${highlightedName}</div>
+              <div class="autosuggest-item-meta">
+                ${amcName ? `<span class="autosuggest-badge-amc">${escapeHtml(amcName)}</span>` : ''}
+                ${item.category ? `<span class="autosuggest-badge-cat">${escapeHtml(item.category)}</span>` : ''}
+                <span class="autosuggest-badge-direct">Direct • Growth</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+        dropdown.style.display = 'block';
+
+        dropdown.querySelectorAll('.autosuggest-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.index, 10);
+            selectItem(currentItems[idx]);
+          });
+        });
+      }
+
+      function selectItem(item) {
+        if (!item) return;
+        input.value = item.name;
+        closeDropdown();
+
+        if (select) {
+          let opt = select.querySelector(`option[value="${item.code}"]`);
+          if (!opt) {
+            opt = document.createElement('option');
+            opt.value = `${item.code}`;
+            opt.textContent = item.name;
+            select.appendChild(opt);
+          }
+          select.value = `${item.code}`;
+        }
+
+        if (amcSelect && item.amc) {
+          const amcOpt = amcSelect.querySelector(`option[value="${item.amc}"]`);
+          if (amcOpt) amcSelect.value = item.amc;
+        }
+
+        if (onSelectCallback) {
+          onSelectCallback(item.code, item);
+        }
+      }
+
+      input.addEventListener('input', () => {
+        const query = input.value.trim().toLowerCase();
+        if (query.length < 2) {
+          closeDropdown();
+          return;
+        }
+
+        // 1. Instant local results (0ms latency)
+        const localMatches = CURATED_SCHEMES.filter(s => 
+          s.name.toLowerCase().includes(query) || (s.category && s.category.toLowerCase().includes(query))
+        );
+        renderItems(localMatches.slice(0, 8), query);
+
+        // 2. Debounced live API query
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+          try {
+            const apiResults = await searchSchemes(query);
+            const directResults = apiResults.filter(r => r.isDirectGrowth);
+            const seen = new Set(localMatches.map(m => m.code));
+            const merged = [...localMatches];
+            directResults.forEach(r => {
+              if (!seen.has(r.code)) {
+                seen.add(r.code);
+                merged.push({
+                  code: r.code,
+                  name: r.name,
+                  category: r.category || 'Direct Plan',
+                  amc: r.amc || ''
+                });
+              }
+            });
+            renderItems(merged.slice(0, 15), query);
+          } catch (e) {
+            // Keep local matches
+          }
+        }, 250);
+      });
+
+      input.addEventListener('keydown', (e) => {
+        const items = dropdown.querySelectorAll('.autosuggest-item');
+        if (!items.length || dropdown.style.display === 'none') return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = (selectedIndex + 1) % items.length;
+          updateHighlight(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          updateHighlight(items);
+        } else if (e.key === 'Enter') {
+          if (selectedIndex >= 0 && selectedIndex < currentItems.length) {
+            e.preventDefault();
+            selectItem(currentItems[selectedIndex]);
+          }
+        } else if (e.key === 'Escape') {
+          closeDropdown();
+        }
+      });
+
+      function updateHighlight(items) {
+        items.forEach((it, idx) => {
+          it.classList.toggle('is-selected', idx === selectedIndex);
+          if (idx === selectedIndex) {
+            it.scrollIntoView({ block: 'nearest' });
+          }
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+          closeDropdown();
+        }
+      });
+    }
+
     // Calculator suite defaults to hypothetical projection mode as per Section 3
     let sipMode = 'hypothetical';
     let sipSelectedDay = 1; // Default to 1st of month matching AMFI factsheet standard
@@ -793,13 +1552,27 @@ import {
       }
     }
 
+    function showSipNotice(message) {
+      if (!sipRealErrorBanner) return;
+      sipRealErrorBanner.style.display = 'flex';
+      sipRealErrorBanner.style.background = 'rgba(200, 169, 110, 0.14)';
+      sipRealErrorBanner.style.borderColor = 'rgba(200, 169, 110, 0.5)';
+      sipRealErrorBanner.style.color = '#FEF08A';
+      sipRealErrorBanner.innerHTML = `
+        <div><strong>✦ Historical Backtest Notice:</strong> ${escapeHtml(message)}</div>
+      `;
+    }
+
     function showSipError(message) {
       if (!sipRealErrorBanner) return;
       sipRealErrorBanner.style.display = 'flex';
+      sipRealErrorBanner.style.background = 'rgba(239, 68, 68, 0.12)';
+      sipRealErrorBanner.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      sipRealErrorBanner.style.color = '#FCA5A5';
       sipRealErrorBanner.innerHTML = `
-        <div><strong>Live Data Feed Error:</strong> ${message}</div>
-        <div style="font-size:12px; color:#FCA5A5;">Real NAV calculations cannot proceed without verified AMFI data. You may switch to mathematical projection mode:</div>
-        <button type="button" class="switch-to-hypo-btn" id="sip-error-switch-btn">Switch to Hypothetical CAGR Projection</button>
+        <div><strong>Live Data Feed Error:</strong> ${escapeHtml(message)}</div>
+        <div style="font-size:12px; color:#FCA5A5; margin-top:4px;">Real NAV calculations cannot proceed without verified AMFI data. You may switch to mathematical projection mode:</div>
+        <button type="button" class="switch-to-hypo-btn" id="sip-error-switch-btn" style="margin-top:6px;">Switch to Hypothetical CAGR Projection</button>
       `;
       const switchBtn = document.getElementById('sip-error-switch-btn');
       if (switchBtn && sipBtnModeHypo) {
@@ -818,7 +1591,8 @@ import {
 
     async function onSipSchemeChange(code) {
       clearSipError();
-      const scheme = CURATED_SCHEMES.find(s => s.code === parseInt(code, 10));
+      const numCode = parseInt(code, 10);
+      const scheme = CURATED_SCHEMES.find(s => s.code === numCode);
       if (scheme && sipFundCategory) {
         sipFundCategory.textContent = scheme.category;
       }
@@ -827,25 +1601,46 @@ import {
       }
       isFetchingScheme = true;
       try {
-        const data = await fetchSchemeData(code);
+        const data = await fetchSchemeData(numCode);
         currentSchemeData = data;
         clearSipError();
         if (sipFundNavChip) {
           sipFundNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${data.latestNav.toFixed(2)} (${data.latestDate})`;
         }
-        recalculateSIP();
+
+        // Configure horizon slider limits dynamically to actual fund history
+        if (sipMode === 'real' && data.sortedHistory && data.sortedHistory.length > 0) {
+          const availableYears = Math.min(10, Math.max(1, Math.floor(data.sortedHistory.length / 248)));
+          sipBasicHorizonRange.max = `${availableYears}`;
+          if (parseInt(sipBasicHorizonRange.value, 10) > availableYears) {
+            sipBasicHorizonRange.value = `${availableYears}`;
+          }
+          syncSipHorizonTicks(availableYears);
+        }
       } catch (err) {
         currentSchemeData = null;
         if (sipFundNavChip) {
           sipFundNavChip.innerHTML = '<span style="color:#ef4444;">Unable to load live NAV</span>';
         }
         showSipError(err.message || 'Failed to retrieve AMFI historical records.');
+        return;
       } finally {
         isFetchingScheme = false;
       }
+
+      recalculateSIP();
     }
 
-    // Dynamic Search Handler
+    // Connect Autosuggestion Engine to Search Box
+    initSchemeAutosuggest({
+      inputId: 'sip-scheme-search-input',
+      dropdownId: 'sip-scheme-autosuggest',
+      selectId: 'sip-scheme-select',
+      amcSelectId: 'sip-amc-select',
+      onSelectCallback: (code) => onSipSchemeChange(code)
+    });
+
+    // Dynamic Search Handler (fallback for button click)
     async function handleSipSchemeSearch() {
       if (!sipSchemeSearchInput) return;
       const query = sipSchemeSearchInput.value.trim();
@@ -864,7 +1659,6 @@ import {
         }
 
         clearSipError();
-        // Append search results to scheme select
         const optionsHtml = directGrowthResults.slice(0, 20).map(r => `<option value="${r.code}">${r.name}</option>`).join('');
         if (sipSchemeSelect) {
           sipSchemeSelect.innerHTML = optionsHtml;
@@ -877,14 +1671,6 @@ import {
 
     if (sipSchemeSearchBtn) {
       sipSchemeSearchBtn.addEventListener('click', handleSipSchemeSearch);
-    }
-    if (sipSchemeSearchInput) {
-      sipSchemeSearchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleSipSchemeSearch();
-        }
-      });
     }
 
     if (sipAmcSelect) {
@@ -927,10 +1713,15 @@ import {
         if (sipDisclaimerText) {
           sipDisclaimerText.innerHTML = '<strong>*Historical Simulation Notice:</strong> Calculated using actual historical daily AMFI NAV time-series. Mutual fund investments are subject to market risks; past performance does not predict or guarantee future returns.';
         }
+        const maxYears = currentSchemeData?.sortedHistory?.length 
+          ? Math.min(10, Math.max(1, Math.floor(currentSchemeData.sortedHistory.length / 248)))
+          : 10;
         if (sipBasicHorizonRange) {
-          sipBasicHorizonRange.max = '10';
-          if (parseInt(sipBasicHorizonRange.value, 10) > 10) sipBasicHorizonRange.value = '5';
+          sipBasicHorizonRange.max = `${maxYears}`;
+          if (parseInt(sipBasicHorizonRange.value, 10) > maxYears) sipBasicHorizonRange.value = `${maxYears}`;
         }
+        syncSipHorizonTicks(maxYears);
+
         if (!currentSchemeData && sipAmcSelect) {
           updateSipSchemeOptions(sipAmcSelect.value || CURATED_AMCS[0].id);
         } else {
@@ -954,6 +1745,7 @@ import {
           sipDisclaimerText.innerHTML = '<strong>*Statutory Disclaimer:</strong> Projections calculate smooth compounded growth at assumed CAGR. Mutual Fund investments are subject to market risks; read all scheme-related documents carefully.';
         }
         if (sipBasicHorizonRange) sipBasicHorizonRange.max = '35';
+        syncSipHorizonTicks();
         recalculateSIP();
       });
     }
@@ -1004,46 +1796,64 @@ import {
       }
 
       // Real Historical Simulation
-      const result = calculateRealSIP({
-        schemeData: currentSchemeData,
-        monthlyAmount: monthly,
-        sipDay: sipSelectedDay,
-        years
-      });
+      try {
+        const result = calculateRealSIP({
+          schemeData: currentSchemeData,
+          monthlyAmount: monthly,
+          sipDay: sipSelectedDay,
+          years,
+          allowPartial: true
+        });
 
-      if (sipBasicBadge) sipBasicBadge.textContent = `${years} Yr Historical Backtest`;
-      if (sipPeriodDatesChip) {
-        sipPeriodDatesChip.textContent = `${result.firstInstallmentDate} to ${result.lastInstallmentDate} (${result.installmentsCount} Installments)`;
+        if (sipBasicBadge) {
+          sipBasicBadge.textContent = `${result.effectiveYears || years} Yr Historical Backtest`;
+        }
+        if (sipPeriodDatesChip) {
+          sipPeriodDatesChip.textContent = `${result.firstInstallmentDate} to ${result.lastInstallmentDate} (${result.installmentsCount} Installments)`;
+        }
+        if (sipBasicTotalWealth) sipBasicTotalWealth.textContent = formatINR(result.currentValuation);
+        if (sipBasicTotalGain) sipBasicTotalGain.textContent = `${result.netGain >= 0 ? '+' : ''}${formatINR(result.netGain)}`;
+        if (sipBasicTotalInvested) sipBasicTotalInvested.textContent = formatINR(result.totalInvested);
+        
+        const mult = result.totalInvested > 0 ? (result.currentValuation / result.totalInvested).toFixed(2) : '1.00';
+        if (sipBasicMultiplier) sipBasicMultiplier.textContent = `${mult}x`;
+
+        if (sipUnitsVal) sipUnitsVal.textContent = `${Math.round(result.totalUnits).toLocaleString()} units`;
+        if (sipNavVal) sipNavVal.textContent = `₹ ${result.latestNav.toFixed(2)} (${result.latestNavDate})`;
+        if (sipAbsReturnVal) sipAbsReturnVal.textContent = `${result.absoluteReturnPercent >= 0 ? '+' : ''}${result.absoluteReturnPercent.toFixed(2)}%`;
+        if (sipCagrReturnVal) sipCagrReturnVal.textContent = `${result.annualizedReturnPercent >= 0 ? '+' : ''}${result.annualizedReturnPercent.toFixed(2)}% p.a. (XIRR)`;
+
+        if (sipBasicLegInv) sipBasicLegInv.textContent = formatINR(result.totalInvested);
+        if (sipBasicLegGain) sipBasicLegGain.textContent = formatINR(result.netGain);
+
+        const invRatio = result.currentValuation > 0 ? Math.round((result.totalInvested / result.currentValuation) * 100) : 50;
+        const gainRatio = Math.max(0, 100 - invRatio);
+        if (sipBasicBarInvested) sipBasicBarInvested.style.width = `${invRatio}%`;
+        if (sipBasicBarGains) sipBasicBarGains.style.width = `${gainRatio}%`;
+        if (sipBasicRatioLbl) sipBasicRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
+
+        if (result.isPartialHistory && result.historyNotice) {
+          showSipNotice(result.historyNotice);
+        } else {
+          clearSipError();
+        }
+      } catch (err) {
+        showSipError(err.message || 'Error executing historical simulation.');
       }
-      if (sipBasicTotalWealth) sipBasicTotalWealth.textContent = formatINR(result.currentValuation);
-      if (sipBasicTotalGain) sipBasicTotalGain.textContent = `${result.netGain >= 0 ? '+' : ''}${formatINR(result.netGain)}`;
-      if (sipBasicTotalInvested) sipBasicTotalInvested.textContent = formatINR(result.totalInvested);
-      
-      const mult = result.totalInvested > 0 ? (result.currentValuation / result.totalInvested).toFixed(2) : '1.00';
-      if (sipBasicMultiplier) sipBasicMultiplier.textContent = `${mult}x`;
-
-      if (sipUnitsVal) sipUnitsVal.textContent = `${result.totalUnits.toFixed(3)} units`;
-      if (sipNavVal) sipNavVal.textContent = `₹ ${result.latestNav.toFixed(2)} (${result.latestNavDate})`;
-      if (sipAbsReturnVal) sipAbsReturnVal.textContent = `${result.absoluteReturnPercent >= 0 ? '+' : ''}${result.absoluteReturnPercent.toFixed(2)}%`;
-      if (sipCagrReturnVal) sipCagrReturnVal.textContent = `${result.annualizedReturnPercent >= 0 ? '+' : ''}${result.annualizedReturnPercent.toFixed(2)}% p.a. (XIRR)`;
-
-      if (sipBasicLegInv) sipBasicLegInv.textContent = formatINR(result.totalInvested);
-      if (sipBasicLegGain) sipBasicLegGain.textContent = formatINR(result.netGain);
-
-      const invRatio = result.currentValuation > 0 ? Math.round((result.totalInvested / result.currentValuation) * 100) : 50;
-      const gainRatio = Math.max(0, 100 - invRatio);
-      if (sipBasicBarInvested) sipBasicBarInvested.style.width = `${invRatio}%`;
-      if (sipBasicBarGains) sipBasicBarGains.style.width = `${gainRatio}%`;
-      if (sipBasicRatioLbl) sipBasicRatioLbl.textContent = `${gainRatio}% Growth : ${invRatio}% Capital`;
     }
+
+    // Initialize Mathematically Aligned Ticks
+    updateSliderTicks('sip-monthly-ticks', 1000, 250000, [1000, 25000, 50000, 100000, 150000, 250000], v => formatINR(v));
+    updateSliderTicks('sip-rate-ticks', 6, 24, [6, 10, 13, 18, 24], v => `${v}%`);
+    syncSipHorizonTicks();
 
     sipBasicMonthlyRange.addEventListener('input', recalculateSIP);
     sipBasicHorizonRange.addEventListener('input', recalculateSIP);
     if (sipBasicRateRange) sipBasicRateRange.addEventListener('input', recalculateSIP);
 
-    // Default to Real Mutual Fund NAV Data mode so live NAV data is visible on initial load
-    if (sipBtnModeReal) {
-      sipBtnModeReal.click();
+    // Default to Simple, User-Friendly Standard SIP Model on initial load
+    if (sipBtnModeHypo) {
+      sipBtnModeHypo.click();
     } else {
       recalculateSIP();
     }
@@ -1159,6 +1969,17 @@ import {
         if (lsFundNavChip) {
           lsFundNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${data.latestNav.toFixed(2)} (${data.latestDate})`;
         }
+
+        if (lsMode === 'real' && data.sortedHistory && data.sortedHistory.length > 0) {
+          const availableYears = Math.min(10, Math.max(1, Math.floor(data.sortedHistory.length / 248)));
+          if (lsHorizonRange) {
+            lsHorizonRange.max = `${availableYears}`;
+            if (parseInt(lsHorizonRange.value, 10) > availableYears) {
+              lsHorizonRange.value = `${availableYears}`;
+            }
+          }
+          syncLsHorizonTicks(availableYears);
+        }
         recalculateLumpsumSIP();
       } catch (err) {
         currentLsSchemeData = null;
@@ -1170,6 +1991,15 @@ import {
         isFetchingLsScheme = false;
       }
     }
+
+    // Connect Autosuggestion Engine to Search Box
+    initSchemeAutosuggest({
+      inputId: 'ls-scheme-search-input',
+      dropdownId: 'ls-scheme-autosuggest',
+      selectId: 'ls-scheme-select',
+      amcSelectId: 'ls-amc-select',
+      onSelectCallback: (code) => onLsSchemeChange(code)
+    });
 
     async function handleLsSchemeSearch() {
       if (!lsSchemeSearchInput) return;
@@ -1254,9 +2084,7 @@ import {
         if (lsHorizonRange) {
           lsHorizonRange.max = '10';
           if (parseInt(lsHorizonRange.value, 10) > 10) lsHorizonRange.value = '5';
-          if (lsHorizonTicks) {
-            lsHorizonTicks.innerHTML = '<span>1 Yr</span><span>3 Yrs</span><span>5 Yrs</span><span>10 Yrs</span>';
-          }
+          syncLsHorizonTicks(10);
         }
         if (!currentLsSchemeData && lsAmcSelect) {
           updateLsSchemeOptions(lsAmcSelect.value || CURATED_AMCS[0].id);
@@ -1285,9 +2113,7 @@ import {
         }
         if (lsHorizonRange) {
           lsHorizonRange.max = '30';
-          if (lsHorizonTicks) {
-            lsHorizonTicks.innerHTML = '<span>1 Yr</span><span>10 Yrs</span><span>20 Yrs</span><span>30 Yrs</span>';
-          }
+          syncLsHorizonTicks(30);
         }
         recalculateLumpsumSIP();
       });
@@ -1314,7 +2140,8 @@ import {
             lumpsumAmount: lump,
             monthlyAmount: sip,
             sipDay: lsSelectedDay,
-            years
+            years,
+            allowPartial: true
           });
 
           if (lsBadge) lsBadge.textContent = `${years} Year Historical NAV`;
@@ -1376,14 +2203,20 @@ import {
       }
     }
 
+    // Initialize Mathematically Aligned Ticks for Lumpsum & SIP
+    updateSliderTicks('ls-lump-ticks', 0, 5000000, [0, 500000, 1500000, 2500000, 5000000], v => v === 0 ? '₹0' : formatINR(v));
+    updateSliderTicks('ls-sip-ticks', 0, 200000, [0, 20000, 50000, 100000, 200000], v => v === 0 ? '₹0' : formatINR(v));
+    updateSliderTicks('ls-rate-ticks', 6, 22, [6, 10, 13, 18, 22], v => `${v}%`);
+    syncLsHorizonTicks();
+
     lsLumpRange.addEventListener('input', recalculateLumpsumSIP);
     lsSipRange.addEventListener('input', recalculateLumpsumSIP);
     lsHorizonRange.addEventListener('input', recalculateLumpsumSIP);
     if (lsRateRange) lsRateRange.addEventListener('input', recalculateLumpsumSIP);
 
-    // Default to Real Mutual Fund NAV Data mode so live NAV data is visible on initial load
-    if (lsBtnModeReal) {
-      lsBtnModeReal.click();
+    // Default to Simple, User-Friendly Standard model
+    if (lsBtnModeHypo) {
+      lsBtnModeHypo.click();
     } else {
       recalculateLumpsumSIP();
     }
@@ -1497,6 +2330,17 @@ import {
         if (stepupFundNavChip) {
           stepupFundNavChip.innerHTML = `<span class="pulse-dot"></span> NAV: ₹ ${data.latestNav.toFixed(2)} (${data.latestDate})`;
         }
+
+        if (stepupMode === 'real' && data.sortedHistory && data.sortedHistory.length > 0) {
+          const availableYears = Math.min(10, Math.max(1, Math.floor(data.sortedHistory.length / 248)));
+          if (sipHorizonRange) {
+            sipHorizonRange.max = `${availableYears}`;
+            if (parseInt(sipHorizonRange.value, 10) > availableYears) {
+              sipHorizonRange.value = `${availableYears}`;
+            }
+          }
+          syncStepupHorizonTicks(availableYears);
+        }
         recalculateStepUpSIP();
       } catch (err) {
         currentStepupSchemeData = null;
@@ -1508,6 +2352,15 @@ import {
         isFetchingStepupScheme = false;
       }
     }
+
+    // Connect Autosuggestion Engine to Search Box
+    initSchemeAutosuggest({
+      inputId: 'stepup-scheme-search-input',
+      dropdownId: 'stepup-scheme-autosuggest',
+      selectId: 'stepup-scheme-select',
+      amcSelectId: 'stepup-amc-select',
+      onSelectCallback: (code) => onStepupSchemeChange(code)
+    });
 
     async function handleStepupSchemeSearch() {
       if (!stepupSchemeSearchInput) return;
@@ -1593,9 +2446,7 @@ import {
         if (sipHorizonRange) {
           sipHorizonRange.max = '10';
           if (parseInt(sipHorizonRange.value, 10) > 10) sipHorizonRange.value = '5';
-          if (stepupHorizonTicks) {
-            stepupHorizonTicks.innerHTML = '<span>1 Yr</span><span>3 Yrs</span><span>5 Yrs</span><span>10 Yrs</span>';
-          }
+          syncStepupHorizonTicks(10);
         }
         if (!currentStepupSchemeData && stepupAmcSelect) {
           updateStepupSchemeOptions(stepupAmcSelect.value || CURATED_AMCS[0].id);
@@ -1625,9 +2476,7 @@ import {
         }
         if (sipHorizonRange) {
           sipHorizonRange.max = '30';
-          if (stepupHorizonTicks) {
-            stepupHorizonTicks.innerHTML = '<span>1 Yr</span><span>10 Yrs</span><span>20 Yrs</span><span>30 Yrs</span>';
-          }
+          syncStepupHorizonTicks(30);
         }
         recalculateStepUpSIP();
       });
@@ -1654,7 +2503,8 @@ import {
             initialMonthlyAmount: initialMonthly,
             stepUpPercent,
             sipDay: stepupSelectedDay,
-            years
+            years,
+            allowPartial: true
           });
 
           if (sipBadge) sipBadge.textContent = `${years} Year Historical Step-Up`;
@@ -1732,14 +2582,20 @@ import {
       }
     }
 
+    // Initialize Mathematically Aligned Ticks for Step-Up SIP
+    updateSliderTicks('stepup-monthly-ticks', 1000, 500000, [1000, 50000, 150000, 250000, 500000], v => formatINR(v));
+    updateSliderTicks('stepup-percent-ticks', 0, 25, [0, 5, 10, 15, 20, 25], v => `${v}%`);
+    updateSliderTicks('stepup-rate-ticks', 8, 18, [8, 10, 13, 15, 18], v => `${v}%`);
+    syncStepupHorizonTicks();
+
     sipMonthlyRange.addEventListener('input', recalculateStepUpSIP);
     sipStepupRange.addEventListener('input', recalculateStepUpSIP);
     sipHorizonRange.addEventListener('input', recalculateStepUpSIP);
     if (sipRateRange) sipRateRange.addEventListener('input', recalculateStepUpSIP);
 
-    // Default to Real Mutual Fund NAV Data mode so live NAV data is visible on initial load
-    if (stepupBtnModeReal) {
-      stepupBtnModeReal.click();
+    // Default to Simple, User-Friendly Standard model
+    if (stepupBtnModeHypo) {
+      stepupBtnModeHypo.click();
     } else {
       recalculateStepUpSIP();
     }
@@ -2559,7 +3415,7 @@ import {
         label: 'Conservative (Level 1)',
         rate: 8.8,
         volatility: 'Low (Defensive)',
-        volColor: '#10b981',
+        volColor: '#C8A96E',
         alloc: { equity: 15, debt: 65, gold: 15, alt: 5 },
         desc: 'Optimized for maximum capital stability and predictable liquidity with predominant allocation to AAA/Sovereign fixed income and sovereign gold hedging.'
       },

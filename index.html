@@ -887,16 +887,16 @@
           <div class="studio-grid">
             <div class="studio-controls reveal">
               <div class="calc-mode-bar" id="sip-mode-bar">
-                <button type="button" class="calc-mode-btn active" data-mode="real" id="sip-btn-mode-real">
-                  <span class="live-nav-chip"><span class="pulse-dot"></span> Real Mutual Fund NAV Data</span>
+                <button type="button" class="calc-mode-btn active" data-mode="hypothetical" id="sip-btn-mode-hypo">
+                  <span>✦ Standard Calculator (Simple)</span>
                 </button>
-                <button type="button" class="calc-mode-btn" data-mode="hypothetical" id="sip-btn-mode-hypo">
-                  <span>Hypothetical CAGR Model</span>
+                <button type="button" class="calc-mode-btn" data-mode="real" id="sip-btn-mode-real">
+                  <span class="live-nav-chip"><span class="pulse-dot"></span> Real Fund NAV Backtest</span>
                 </button>
               </div>
 
               <!-- Real Mutual Fund Scheme Selectors -->
-              <div id="sip-real-controls" class="mf-real-controls">
+              <div id="sip-real-controls" class="mf-real-controls" style="display: none;">
                 <div id="sip-real-error-banner" class="real-error-banner" style="display: none;"></div>
 
                 <div class="studio-control-group">
@@ -904,8 +904,9 @@
                     <span class="studio-control-label">Search Any Direct Growth Fund</span>
                   </div>
                   <div class="scheme-search-wrap">
-                    <input type="text" id="sip-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Small Cap, Bluechip, Flexi Cap)..." />
+                    <input type="text" id="sip-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Nippon, Small Cap, Bluechip)..." autocomplete="off" />
                     <button type="button" id="sip-scheme-search-btn" class="scheme-search-btn">Search</button>
+                    <div id="sip-scheme-autosuggest" class="autosuggest-dropdown" style="display: none;"></div>
                   </div>
                 </div>
 
@@ -960,40 +961,25 @@
                   <span class="studio-control-val" id="sip-basic-monthly-val">₹ 25,000 / month</span>
                 </div>
                 <input type="range" class="luxury-range" id="sip-basic-monthly-range" min="1000" max="250000" step="1000" value="25000">
-                <div class="range-ticks">
-                  <span>₹1,000</span>
-                  <span>₹25,000</span>
-                  <span>₹1 Lakh</span>
-                  <span>₹2.5 Lakhs</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="sip-monthly-ticks"></div>
               </div>
 
-              <div class="studio-control-group" id="sip-hypo-rate-group" style="display: none;">
+              <div class="studio-control-group" id="sip-hypo-rate-group">
                 <div class="studio-control-label-row">
                   <span class="studio-control-label">Expected Return Rate (p.a.)</span>
                   <span class="studio-control-val" id="sip-basic-rate-val">13.0% p.a.*</span>
                 </div>
                 <input type="range" class="luxury-range" id="sip-basic-rate-range" min="6" max="24" step="0.5" value="13">
-                <div class="range-ticks">
-                  <span>6% (Debt)</span>
-                  <span>10% (Hybrid)</span>
-                  <span>13% (Equity)</span>
-                  <span>24% (Alpha)</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="sip-rate-ticks"></div>
               </div>
 
               <div class="studio-control-group">
                 <div class="studio-control-label-row">
-                  <span class="studio-control-label" id="sip-horizon-label">Historical SIP Period</span>
-                  <span class="studio-control-val" id="sip-basic-horizon-val">3 Years</span>
+                  <span class="studio-control-label" id="sip-horizon-label">Investment Time Period</span>
+                  <span class="studio-control-val" id="sip-basic-horizon-val">10 Years</span>
                 </div>
-                <input type="range" class="luxury-range" id="sip-basic-horizon-range" min="1" max="10" step="1" value="3">
-                <div class="range-ticks" id="sip-horizon-ticks">
-                  <span>1 Yr</span>
-                  <span>3 Yrs</span>
-                  <span>5 Yrs</span>
-                  <span>10 Yrs</span>
-                </div>
+                <input type="range" class="luxury-range" id="sip-basic-horizon-range" min="1" max="35" step="1" value="10">
+                <div class="range-ticks positioned-ticks" id="sip-horizon-ticks"></div>
               </div>
 
               <div class="studio-cta-wrap">
@@ -1010,21 +996,21 @@
                 <div class="analytics-header">
                   <div class="analytics-status">
                     <span class="status-dot"></span>
-                    <span id="sip-engine-title">Real NAV Historical Engine</span>
+                    <span id="sip-engine-title">SIP Wealth Projection</span>
                   </div>
                   <div style="text-align: right;">
-                    <div class="analytics-badge" id="sip-basic-badge">3 Year Historical NAV</div>
+                    <div class="analytics-badge" id="sip-basic-badge">Long-Term Compounding</div>
                     <div id="sip-period-dates-chip" style="font-size: 11px; color: var(--gold-champagne); margin-top: 4px; font-weight: 500;"></div>
                   </div>
                 </div>
 
                 <div class="analytics-stat-row">
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl" id="sip-wealth-label">Current Portfolio Valuation</span>
+                    <span class="analytics-stat-lbl" id="sip-wealth-label">Expected Future Wealth</span>
                     <span class="analytics-stat-num highlight" id="sip-basic-total-wealth">₹ 0</span>
                   </div>
                   <div class="analytics-stat">
-                    <span class="analytics-stat-lbl" id="sip-gain-label">Wealth Gain / Alpha</span>
+                    <span class="analytics-stat-lbl" id="sip-gain-label">Estimated Wealth Gain</span>
                     <span class="analytics-stat-num highlight" id="sip-basic-total-gain">+₹ 0</span>
                   </div>
                 </div>
@@ -1036,12 +1022,12 @@
                   </div>
                   <div class="analytics-stat">
                     <span class="analytics-stat-lbl" id="sip-stat4-lbl">Growth Multiplier</span>
-                    <span class="analytics-stat-num" id="sip-basic-multiplier" style="font-size: var(--text-xl); color: #10b981;">0.00x</span>
+                    <span class="analytics-stat-num" id="sip-basic-multiplier" style="font-size: var(--text-xl); color: var(--gold-champagne);">0.00x</span>
                   </div>
                 </div>
 
                 <!-- Real Data Specific Metrics -->
-                <div class="real-stat-grid" id="sip-real-metrics-grid">
+                <div class="real-stat-grid" id="sip-real-metrics-grid" style="display: none;">
                   <div class="real-stat-box">
                     <span class="real-stat-box-lbl">Accumulated Units</span>
                     <span class="real-stat-box-val" id="sip-units-val">—</span>
@@ -1105,8 +1091,9 @@
                     <span class="studio-control-label">Search Any Direct Growth Fund</span>
                   </div>
                   <div class="scheme-search-wrap">
-                    <input type="text" id="ls-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Flexi Cap, Large Cap, Bluechip)..." />
+                    <input type="text" id="ls-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Flexi Cap, Large Cap, Bluechip)..." autocomplete="off" />
                     <button type="button" id="ls-scheme-search-btn" class="scheme-search-btn">Search</button>
+                    <div id="ls-scheme-autosuggest" class="autosuggest-dropdown" style="display: none;"></div>
                   </div>
                 </div>
 
@@ -1166,12 +1153,7 @@
                   <span class="studio-control-val" id="ls-lump-val">₹ 5,00,000</span>
                 </div>
                 <input type="range" class="luxury-range" id="ls-lump-range" min="0" max="5000000" step="10000" value="500000">
-                <div class="range-ticks">
-                  <span>₹0</span>
-                  <span>₹5 Lakhs</span>
-                  <span>₹25 Lakhs</span>
-                  <span>₹50 Lakhs</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="ls-lump-ticks"></div>
               </div>
 
               <div class="studio-control-group">
@@ -1180,12 +1162,7 @@
                   <span class="studio-control-val" id="ls-sip-val">₹ 20,000 / month</span>
                 </div>
                 <input type="range" class="luxury-range" id="ls-sip-range" min="0" max="200000" step="1000" value="20000">
-                <div class="range-ticks">
-                  <span>₹0</span>
-                  <span>₹20,000</span>
-                  <span>₹1 Lakh</span>
-                  <span>₹2 Lakhs</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="ls-sip-ticks"></div>
               </div>
 
               <div class="studio-control-group">
@@ -1194,12 +1171,7 @@
                   <span class="studio-control-val" id="ls-horizon-val">10 Years</span>
                 </div>
                 <input type="range" class="luxury-range" id="ls-horizon-range" min="1" max="30" step="1" value="10">
-                <div class="range-ticks" id="ls-horizon-ticks">
-                  <span>1 Yr</span>
-                  <span>10 Yrs</span>
-                  <span>20 Yrs</span>
-                  <span>30 Yrs</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="ls-horizon-ticks"></div>
               </div>
 
               <div class="studio-control-group" id="ls-rate-group">
@@ -1208,12 +1180,7 @@
                   <span class="studio-control-val" id="ls-rate-val">13.0% p.a.*</span>
                 </div>
                 <input type="range" class="luxury-range" id="ls-rate-range" min="6" max="22" step="0.5" value="13">
-                <div class="range-ticks">
-                  <span>6%</span>
-                  <span>10%</span>
-                  <span>13%</span>
-                  <span>22%</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="ls-rate-ticks"></div>
               </div>
 
               <div class="studio-cta-wrap">
@@ -1256,7 +1223,7 @@
                   </div>
                   <div class="analytics-stat">
                     <span class="analytics-stat-lbl" id="ls-yield-lbl">Lumpsum Yield Contribution</span>
-                    <span class="analytics-stat-num" id="ls-lump-grow-val" style="font-size: var(--text-xl); color: #10b981;">₹ 16.97 Lakhs</span>
+                    <span class="analytics-stat-num" id="ls-lump-grow-val" style="font-size: var(--text-xl); color: var(--gold-champagne);">₹ 16.97 Lakhs</span>
                   </div>
                 </div>
 
@@ -1341,8 +1308,9 @@
                     <span class="studio-control-label">Search Any Direct Growth Fund</span>
                   </div>
                   <div class="scheme-search-wrap">
-                    <input type="text" id="stepup-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Mid Cap, Small Cap, Flexi Cap)..." />
+                    <input type="text" id="stepup-scheme-search-input" class="luxury-search-input" placeholder="Search by name (e.g., Mid Cap, Small Cap, Flexi Cap)..." autocomplete="off" />
                     <button type="button" id="stepup-scheme-search-btn" class="scheme-search-btn">Search</button>
+                    <div id="stepup-scheme-autosuggest" class="autosuggest-dropdown" style="display: none;"></div>
                   </div>
                 </div>
 
@@ -1402,12 +1370,7 @@
                   <span class="studio-control-val" id="sip-monthly-val">₹ 50,000 / month</span>
                 </div>
                 <input type="range" class="luxury-range" id="sip-monthly-range" min="1000" max="500000" step="1000" value="50000">
-                <div class="range-ticks">
-                  <span>₹1,000</span>
-                  <span>₹50,000</span>
-                  <span>₹2.5 Lakhs</span>
-                  <span>₹5 Lakhs</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="stepup-monthly-ticks"></div>
               </div>
 
               <div class="studio-control-group">
@@ -1416,12 +1379,7 @@
                   <span class="studio-control-val" id="sip-stepup-val">10% per year</span>
                 </div>
                 <input type="range" class="luxury-range" id="sip-stepup-range" min="0" max="25" step="1" value="10">
-                <div class="range-ticks">
-                  <span>0% (Flat)</span>
-                  <span>5%</span>
-                  <span>10%</span>
-                  <span>25%</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="stepup-percent-ticks"></div>
               </div>
 
               <div class="studio-control-group">
@@ -1430,12 +1388,7 @@
                   <span class="studio-control-val" id="sip-horizon-val">15 Years</span>
                 </div>
                 <input type="range" class="luxury-range" id="sip-horizon-range" min="1" max="30" step="1" value="15">
-                <div class="range-ticks" id="stepup-horizon-ticks">
-                  <span>1 Yr</span>
-                  <span>10 Yrs</span>
-                  <span>20 Yrs</span>
-                  <span>30 Yrs</span>
-                </div>
+                <div class="range-ticks positioned-ticks" id="stepup-horizon-ticks"></div>
               </div>
 
               <div class="studio-control-group" id="stepup-rate-group">
@@ -1492,7 +1445,7 @@
                   </div>
                   <div class="analytics-stat">
                     <span class="analytics-stat-lbl" id="stepup-stat4-lbl">Step-Up Advantage vs Flat</span>
-                    <span class="analytics-stat-num" id="sip-advantage" style="font-size: var(--text-xl); color: #10b981;">+₹ 1.25 Cr</span>
+                    <span class="analytics-stat-num" id="sip-advantage" style="font-size: var(--text-xl); color: var(--gold-champagne);">+₹ 1.25 Cr</span>
                   </div>
                 </div>
 
@@ -1850,7 +1803,7 @@
                 <div class="analytics-stat-row" style="margin-bottom: var(--space-4);">
                   <div class="analytics-stat">
                     <span class="analytics-stat-lbl">Total Cash Withdrawn</span>
-                    <span class="analytics-stat-num" id="swp-total-withdrawn" style="color:#10b981;">₹ 0</span>
+                    <span class="analytics-stat-num" id="swp-total-withdrawn" style="color:var(--gold-champagne);">₹ 0</span>
                   </div>
                   <div class="analytics-stat">
                     <span class="analytics-stat-lbl">Final Remaining Corpus</span>
@@ -2099,15 +2052,15 @@
         </div>
         <div class="stat-item reveal reveal-delay-1">
           <div class="stat-value">30+</div>
-          <div class="stat-label">Fund House Partnerships</div>
+          <div class="stat-label">Fund House Partners</div>
         </div>
         <div class="stat-item reveal reveal-delay-2">
           <div class="stat-value">75+</div>
-          <div class="stat-label">Man Years Experience</div>
+          <div class="stat-label">Years of Experience</div>
         </div>
         <div class="stat-item reveal reveal-delay-3">
           <div class="stat-value">6</div>
-          <div class="stat-label">Market Crises Navigated</div>
+          <div class="stat-label">Market Cycles Navigated</div>
         </div>
       </div>
     </div>

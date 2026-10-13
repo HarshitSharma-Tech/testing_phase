@@ -65,6 +65,9 @@ export const CURATED_SCHEMES = [
 
   // Nippon
   { amc: 'nippon', code: 118778, name: 'Nippon India Small Cap Fund - Direct Growth', category: 'Equity: Small Cap', type: 'equity', isin: 'INF204K01H60' },
+  { amc: 'nippon', code: 148457, name: 'Nippon India Multi Asset Allocation Fund - Direct Plan - Growth Option', category: 'Hybrid: Multi Asset Allocation', type: 'hybrid', isin: 'INF204KB19V4' },
+  { amc: 'nippon', code: 120684, name: 'Nippon India Large Cap Fund - Direct Plan - Growth Plan', category: 'Equity: Large Cap', type: 'equity', isin: 'INF204K01GN7' },
+  { amc: 'nippon', code: 118742, name: 'Nippon India Growth Fund - Direct Plan - Growth Plan', category: 'Equity: Mid Cap', type: 'equity', isin: 'INF204K01HP5' },
   { amc: 'nippon', code: 118834, name: 'Nippon India Liquid Fund - Direct Growth', category: 'Debt: Liquid Fund', type: 'debt', isin: 'INF204K01KK4' },
 
   // Mirae Asset
@@ -194,7 +197,7 @@ export async function fetchLatestNav(schemeCode, { timeoutMs = 8000 } = {}) {
  * Fetch scheme details and historical NAV array from MFAPI with deduplication & caching
  * Supports optional startDate and endDate query parameters when filtering is needed.
  */
-export async function fetchSchemeData(schemeCode, { startDate = null, endDate = null, timeoutMs = 10000, enforceDirectGrowth = false } = {}) {
+export async function fetchSchemeData(schemeCode, { startDate = null, endDate = null, timeoutMs = 10000, enforceDirectGrowth = false, signal = null, forceRefresh = false } = {}) {
   const code = parseInt(schemeCode, 10);
   if (isNaN(code)) {
     throw new MFDataError('Invalid scheme code provided', 'INVALID_DATA');
@@ -202,39 +205,49 @@ export async function fetchSchemeData(schemeCode, { startDate = null, endDate = 
 
   const cacheKey = (startDate || endDate) ? `${code}_${startDate || ''}_${endDate || ''}` : `${code}`;
 
-  // 1. Check in-memory cache
-  if (schemeCache.has(cacheKey)) {
+  // 1. Check in-memory cache (unless forceRefresh)
+  if (!forceRefresh && schemeCache.has(cacheKey)) {
     return schemeCache.get(cacheKey);
   }
 
-  // 2. Check sessionStorage
-  try {
-    const cached = sessionStorage.getItem(`mf_nav_v3_${cacheKey}`);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      const navMap = new Map(parsed.navEntries);
-      const processed = {
-        meta: parsed.meta,
-        latestNav: parsed.latestNav,
-        latestDate: parsed.latestDate,
-        navMap,
-        sortedHistory: parsed.sortedHistory || [],
-        isDirectGrowth: parsed.isDirectGrowth ?? isDirectGrowth(parsed.meta?.scheme_name || '')
-      };
-      schemeCache.set(cacheKey, processed);
-      return processed;
+  // 2. Check sessionStorage (unless forceRefresh)
+  if (!forceRefresh) {
+    try {
+      const cached = sessionStorage.getItem(`mf_nav_v3_${cacheKey}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const navMap = new Map(parsed.navEntries);
+        const processed = {
+          code,
+          meta: parsed.meta,
+          latestNav: parsed.latestNav,
+          latestDate: parsed.latestDate,
+          navMap,
+          sortedHistory: parsed.sortedHistory || [],
+          isDirectGrowth: parsed.isDirectGrowth ?? isDirectGrowth(parsed.meta?.scheme_name || '')
+        };
+        schemeCache.set(cacheKey, processed);
+        return processed;
+      }
+    } catch (e) {
+      // SessionStorage unavailable
     }
-  } catch (e) {
-    // SessionStorage unavailable
   }
 
   // 3. Request deduplication
-  if (inFlightRequests.has(cacheKey)) {
+  if (!forceRefresh && inFlightRequests.has(cacheKey)) {
     return inFlightRequests.get(cacheKey);
   }
 
   const fetchPromise = (async () => {
     const controller = new AbortController();
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort();
+      } else {
+        signal.addEventListener('abort', () => controller.abort());
+      }
+    }
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
@@ -292,8 +305,10 @@ export async function fetchSchemeData(schemeCode, { startDate = null, endDate = 
 
       const latestItem = json.data[0];
       const processed = {
+        code,
         meta: {
           ...(json.meta || {}),
+          scheme_code: json.meta?.scheme_code || code,
           isDirectGrowth: directGrowthMatch
         },
         latestNav: parseFloat(latestItem.nav),
@@ -341,16 +356,25 @@ export async function fetchSchemeData(schemeCode, { startDate = null, endDate = 
  * Resolve NAV on a target date, or the immediate next business day if holiday/weekend
  * Forward search convention: up to 7 calendar days
  */
-export function getBusinessDayNav(navMap, targetDate) {
-  const check = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-  for (let offset = 0; offset <= 7; offset++) {
+export function getBusinessDayNav(navMap, targetDate, maxSearchDays = 7) {
+  if (!navMap || !targetDate) return null;
+  const target = typeof targetDate === 'string' ? parseLocalDate(targetDate) : targetDate;
+  if (!target || isNaN(target.getTime())) return null;
+
+  const map = navMap instanceof Map
+    ? navMap
+    : new Map(Array.isArray(navMap) ? navMap.map(x => [x.date, typeof x.nav === 'number' ? x.nav : parseFloat(x.nav)]) : Object.entries(navMap));
+
+  const check = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  for (let offset = 0; offset <= maxSearchDays; offset++) {
     const key = formatYMD(check);
-    if (navMap.has(key)) {
+    if (map.has(key)) {
       const parts = key.split('-');
       return {
+        date: key,
         dateKey: key,
         rawDate: `${parts[2]}-${parts[1]}-${parts[0]}`,
-        nav: navMap.get(key),
+        nav: map.get(key),
         offsetDays: offset
       };
     }
@@ -417,7 +441,7 @@ export function calculateXIRR(cashflows, guess = 0.1) {
  * 5. Current valuation = totalUnits * latestNav.
  * 6. Annualized return is calculated using XIRR from actual cashflow dates to valuation date.
  */
-export function calculateRealSIP({ schemeData, monthlyAmount, sipDay = 1, years = 3 }) {
+export function calculateRealSIP({ schemeData, monthlyAmount, sipDay = 1, years = 3, allowPartial = false }) {
   if (!schemeData || !schemeData.navMap) {
     throw new MFDataError('Invalid scheme data supplied for SIP calculation', 'INVALID_DATA');
   }
@@ -472,11 +496,17 @@ export function calculateRealSIP({ schemeData, monthlyAmount, sipDay = 1, years 
     }
   }
 
-  if (transactions.length < totalMonths) {
-    const earliestAvailable = schemeData.sortedHistory && schemeData.sortedHistory.length > 0 ? schemeData.sortedHistory[0].rawDate : 'unknown';
-    throw new MFDataError(`Insufficient historical NAV records: The fund has data from ${earliestAvailable}, which is insufficient for the requested ${years}-year period (${transactions.length} of ${totalMonths} installments executed).`, 'INSUFFICIENT_HISTORY');
+  const earliestAvailable = schemeData.sortedHistory && schemeData.sortedHistory.length > 0 ? schemeData.sortedHistory[0].rawDate : 'unknown';
+
+  if (transactions.length === 0) {
+    throw new MFDataError(`No historical NAV records found for this fund since ${earliestAvailable}.`, 'INSUFFICIENT_HISTORY');
   }
 
+  if (!allowPartial && transactions.length < totalMonths) {
+    throw new MFDataError(`Insufficient historical NAV records: Scheme data begins on ${earliestAvailable}, which is insufficient for the requested ${years}-year backtest (${transactions.length} of ${totalMonths} installments executed).`, 'INSUFFICIENT_HISTORY');
+  }
+
+  const isPartial = transactions.length < totalMonths;
   const currentValuation = totalUnits * latestNav;
   const netGain = currentValuation - totalInvested;
   const absoluteReturnPercent = totalInvested > 0 ? ((netGain / totalInvested) * 100) : 0;
@@ -488,6 +518,7 @@ export function calculateRealSIP({ schemeData, monthlyAmount, sipDay = 1, years 
   });
 
   const xirr = calculateXIRR(cashflows);
+  const effectiveYears = +(transactions.length / 12).toFixed(1);
 
   return {
     schemeName: schemeData.meta?.scheme_name || 'Selected Fund',
@@ -504,7 +535,14 @@ export function calculateRealSIP({ schemeData, monthlyAmount, sipDay = 1, years 
     firstInstallmentDate: transactions[0]?.navDateFormatted,
     lastInstallmentDate: transactions[transactions.length - 1]?.navDateFormatted,
     convention: TRANSACTION_DATE_CONVENTION,
-    transactions
+    transactions,
+    isPartialHistory: isPartial,
+    requestedYears: years,
+    effectiveYears,
+    earliestAvailable,
+    historyNotice: isPartial
+      ? `Fund Inception: ${earliestAvailable} (${effectiveYears} Yrs live data). Simulated across maximum available ${transactions.length} installments.`
+      : null
   };
 }
 
@@ -704,7 +742,7 @@ export function calculateRealSWP({ schemeData, initialCorpus, monthlyWithdrawal,
  * 5. Dated cashflows: Day 0 lumpsum (-L), each SIP installment (-S), and terminal valuation (+V).
  * 6. Annualized XIRR calculated across all dated cash flows.
  */
-export function calculateRealLumpsumSIP({ schemeData, lumpsumAmount = 500000, monthlyAmount = 20000, sipDay = 1, years = 3 }) {
+export function calculateRealLumpsumSIP({ schemeData, lumpsumAmount, lumpsum, monthlyAmount = 20000, sipDay = 1, years = 3, allowPartial = false }) {
   if (!schemeData || !schemeData.navMap) {
     throw new MFDataError('Invalid scheme data supplied for Lumpsum & SIP calculation', 'INVALID_DATA');
   }
@@ -715,7 +753,7 @@ export function calculateRealLumpsumSIP({ schemeData, lumpsumAmount = 500000, mo
     throw new MFDataError('Could not determine valuation date from scheme metadata', 'INVALID_DATA');
   }
 
-  const lump = Math.max(0, parseFloat(lumpsumAmount) || 0);
+  const lump = Math.max(0, parseFloat(lumpsum ?? lumpsumAmount ?? 500000) || 0);
   const sip = Math.max(0, parseFloat(monthlyAmount) || 0);
 
   if (lump === 0 && sip === 0) {
@@ -739,6 +777,9 @@ export function calculateRealLumpsumSIP({ schemeData, lumpsumAmount = 500000, mo
 
   if (lump > 0) {
     lumpsumNavRecord = getBusinessDayNav(navMap, startTargetDate);
+    if (!lumpsumNavRecord && allowPartial && schemeData.sortedHistory && schemeData.sortedHistory.length > 0) {
+      lumpsumNavRecord = schemeData.sortedHistory[0];
+    }
     if (!lumpsumNavRecord) {
       throw new MFDataError(`Could not find starting NAV for historical date near ${formatYMD(startTargetDate)}`, 'INVALID_DATA');
     }
@@ -797,7 +838,7 @@ export function calculateRealLumpsumSIP({ schemeData, lumpsumAmount = 500000, mo
   }
 
   const executedSipCount = transactions.filter(t => t.type === 'SIP').length;
-  if (sip > 0 && executedSipCount < totalMonths) {
+  if (!allowPartial && sip > 0 && executedSipCount < totalMonths) {
     const earliestAvailable = schemeData.sortedHistory && schemeData.sortedHistory.length > 0 ? schemeData.sortedHistory[0].rawDate : 'unknown';
     throw new MFDataError(`Insufficient historical NAV records: Scheme data begins on ${earliestAvailable}, which is insufficient for the requested ${years}-year SIP schedule (${executedSipCount} of ${totalMonths} installments executed).`, 'INSUFFICIENT_HISTORY');
   }
@@ -861,7 +902,7 @@ export function calculateRealLumpsumSIP({ schemeData, lumpsumAmount = 500000, mo
  * 4. Dated cashflows: each installment (-S_m), terminal valuation (+V).
  * 5. Returns annual step-up schedule breakdown for transparency.
  */
-export function calculateRealStepUpSIP({ schemeData, initialMonthlyAmount = 25000, stepUpPercent = 10, sipDay = 1, years = 3 }) {
+export function calculateRealStepUpSIP({ schemeData, initialMonthlyAmount, initialMonthly, stepUpPercent = 10, sipDay = 1, years = 3, allowPartial = false }) {
   if (!schemeData || !schemeData.navMap) {
     throw new MFDataError('Invalid scheme data supplied for Step-Up SIP calculation', 'INVALID_DATA');
   }
@@ -872,7 +913,7 @@ export function calculateRealStepUpSIP({ schemeData, initialMonthlyAmount = 2500
     throw new MFDataError('Could not determine valuation date from scheme metadata', 'INVALID_DATA');
   }
 
-  const baseMonthly = Math.max(0, parseFloat(initialMonthlyAmount) || 0);
+  const baseMonthly = Math.max(0, parseFloat(initialMonthly ?? initialMonthlyAmount ?? 25000) || 0);
   if (baseMonthly <= 0) {
     throw new MFDataError('Initial monthly SIP amount must be greater than zero', 'INVALID_DATA');
   }
@@ -935,7 +976,12 @@ export function calculateRealStepUpSIP({ schemeData, initialMonthlyAmount = 2500
     }
   }
 
-  if (transactions.length < totalMonths) {
+  if (transactions.length === 0) {
+    const earliestAvailable = schemeData.sortedHistory && schemeData.sortedHistory.length > 0 ? schemeData.sortedHistory[0].rawDate : 'unknown';
+    throw new MFDataError(`No historical NAV records found for this fund since ${earliestAvailable}.`, 'INSUFFICIENT_HISTORY');
+  }
+
+  if (!allowPartial && transactions.length < totalMonths) {
     const earliestAvailable = schemeData.sortedHistory && schemeData.sortedHistory.length > 0 ? schemeData.sortedHistory[0].rawDate : 'unknown';
     throw new MFDataError(`Insufficient historical NAV records: Scheme data begins on ${earliestAvailable}, which is insufficient for the requested ${years}-year step-up schedule (${transactions.length} of ${totalMonths} installments executed).`, 'INSUFFICIENT_HISTORY');
   }
@@ -960,6 +1006,7 @@ export function calculateRealStepUpSIP({ schemeData, initialMonthlyAmount = 2500
     initialMonthlyAmount: baseMonthly,
     stepUpPercent: stepUp,
     annualSchedule,
+    schedule: annualSchedule,
     totalInvested,
     totalUnits,
     currentValuation,
