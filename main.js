@@ -1842,8 +1842,8 @@ import {
       }
     }
 
-    // Initialize Mathematically Aligned Ticks
-    updateSliderTicks('sip-monthly-ticks', 1000, 250000, [1000, 25000, 50000, 100000, 150000, 250000], v => formatINR(v));
+    // Initialize Mathematically Aligned Ticks (spaced evenly to avoid label overlap)
+    updateSliderTicks('sip-monthly-ticks', 1000, 250000, [1000, 50000, 100000, 175000, 250000], v => formatINR(v));
     updateSliderTicks('sip-rate-ticks', 6, 24, [6, 10, 13, 18, 24], v => `${v}%`);
     syncSipHorizonTicks();
 
